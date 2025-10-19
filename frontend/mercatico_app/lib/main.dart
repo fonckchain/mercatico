@@ -1,12 +1,23 @@
 import 'package:flutter/material.dart';
 import 'screens/api_test_screen.dart';
+import 'screens/auth/login_screen.dart';
+import 'screens/home_screen.dart';
+import 'core/services/auth_service.dart';
 
-void main() {
-  runApp(const MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Inicializar servicio de autenticación
+  final authService = AuthService();
+  await authService.initialize();
+
+  runApp(MyApp(authService: authService));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final AuthService authService;
+
+  const MyApp({super.key, required this.authService});
 
   @override
   Widget build(BuildContext context) {
@@ -16,7 +27,12 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
         useMaterial3: true,
       ),
-      home: const ApiTestScreen(),
+      initialRoute: '/login',
+      routes: {
+        '/login': (context) => const LoginScreen(),
+        '/home': (context) => const HomeScreen(),
+        '/api-test': (context) => const ApiTestScreen(),
+      },
     );
   }
 }
