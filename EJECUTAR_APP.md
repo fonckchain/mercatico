@@ -6,6 +6,19 @@
 - ✅ Android toolchain configurado
 - ✅ Chrome instalado
 - ✅ Backend Django corriendo en http://127.0.0.1:8000/
+- ✅ **Configuración automática de URL**: La app detecta la plataforma y usa la URL correcta automáticamente
+  - Web/Desktop: `http://127.0.0.1:8000/api`
+  - Android Emulator: `http://10.0.2.2:8000/api`
+  - iOS Simulator: `http://127.0.0.1:8000/api`
+
+## 🧪 Pantalla de Prueba de API
+
+La app ahora incluye una pantalla de prueba que:
+- Muestra la URL de la API que se está usando
+- Permite probar la conexión con el backend
+- Muestra la respuesta del servidor
+
+Esta pantalla es útil para verificar que la configuración es correcta en cada plataforma.
 
 ---
 

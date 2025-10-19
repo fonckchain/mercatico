@@ -1,5 +1,5 @@
 import 'package:dio/dio.dart';
-import 'api_constants.dart';
+import '../constants/api_constants.dart';
 
 /// Servicio centralizado para llamadas a la API
 class ApiService {
@@ -241,7 +241,12 @@ class ApiService {
 
   /// Verificar estado de la API
   Future<Map<String, dynamic>> healthCheck() async {
-    final response = await _dio.get(ApiConstants.health);
+    // Health endpoint is not under /api, so we use an absolute URL
+    final healthDio = Dio(BaseOptions(
+      connectTimeout: const Duration(seconds: 10),
+      receiveTimeout: const Duration(seconds: 10),
+    ));
+    final response = await healthDio.get(ApiConstants.healthUrl);
     return response.data;
   }
 }

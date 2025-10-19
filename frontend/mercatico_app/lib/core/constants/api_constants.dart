@@ -1,3 +1,6 @@
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
+
 /// Constantes de API para MercaTico
 class ApiConstants {
   // Base URLs
@@ -6,8 +9,19 @@ class ApiConstants {
 
   // Determinar URL base según la plataforma
   static String get apiBaseUrl {
-    // TODO: Detectar plataforma y devolver URL apropiada
-    return baseUrl;
+    if (kIsWeb) {
+      // Web: usa localhost
+      return baseUrl;
+    } else if (Platform.isAndroid) {
+      // Android: usa 10.0.2.2 para emulador (accede al host)
+      return baseUrlAndroidEmulator;
+    } else if (Platform.isIOS) {
+      // iOS: localhost funciona en simulador
+      return baseUrl;
+    } else {
+      // Desktop (Linux, macOS, Windows): usa localhost
+      return baseUrl;
+    }
   }
 
   // Auth endpoints
@@ -49,8 +63,16 @@ class ApiConstants {
       '/reviews/seller_reviews/?seller_id=$sellerId';
   static String reportReview(String id) => '/reviews/$id/report/';
 
-  // Health check
-  static const String health = '/health/';
+  // Health check (not under /api)
+  static String get healthUrl {
+    if (kIsWeb) {
+      return 'http://127.0.0.1:8000/health/';
+    } else if (Platform.isAndroid) {
+      return 'http://10.0.2.2:8000/health/';
+    } else {
+      return 'http://127.0.0.1:8000/health/';
+    }
+  }
 
   // Headers
   static Map<String, String> get headers => {
