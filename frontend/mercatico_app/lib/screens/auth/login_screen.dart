@@ -247,16 +247,33 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Email: comprador1@test.com',
+                          'Compradores:',
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
                             color: Colors.blue[700],
                           ),
                         ),
                         Text(
-                          'Contraseña: test1234',
+                          '• comprador1@test.cr / test1234',
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: 11,
+                            color: Colors.blue[700],
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Vendedores:',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.blue[700],
+                          ),
+                        ),
+                        Text(
+                          '• artesanias.don.juan@test.cr / test1234',
+                          style: TextStyle(
+                            fontSize: 11,
                             color: Colors.blue[700],
                           ),
                         ),
