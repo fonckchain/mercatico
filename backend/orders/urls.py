@@ -3,9 +3,10 @@ URLs for orders app.
 """
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
+from orders.views import OrderViewSet
 
-# Placeholder router for future views
 router = DefaultRouter()
+router.register(r'', OrderViewSet, basename='order')
 
 app_name = 'orders'
 

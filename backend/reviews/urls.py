@@ -3,9 +3,11 @@ URLs for reviews app.
 """
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
+from reviews.views import ReviewViewSet, ReviewReportViewSet
 
-# Placeholder router for future views
 router = DefaultRouter()
+router.register(r'', ReviewViewSet, basename='review')
+router.register(r'reports', ReviewReportViewSet, basename='report')
 
 app_name = 'reviews'
 
