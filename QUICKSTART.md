@@ -11,12 +11,76 @@ Antes de comenzar, asegúrate de tener instalado:
 - ✅ Flutter 3.x (para frontend)
 - ✅ Git
 
-## Paso 1: Clonar el Repositorio
+## Paso 1: Configurar Base de Datos
+
+**Importante**: Necesitas configurar la base de datos ANTES de ejecutar el script de inicialización del backend.
+
+### Opción A: Docker (Recomendado para desarrollo) 🐳
+
+Esta es la forma más rápida y fácil. Solo necesitas tener Docker instalado.
 
 ```bash
-# Ya estás en el directorio del proyecto
-cd /home/fonck/Documents/Development/mercatico
+# 1. Instalar Docker (si no lo tienes)
+# Ubuntu/Debian:
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+
+# 2. Iniciar PostgreSQL con el script automatizado
+./start-database.sh
 ```
+
+El script te dará la cadena de conexión que necesitas para el `.env`:
+```env
+DATABASE_URL=postgresql://mercatico_user:mercatico_dev_password@localhost:5432/mercatico
+```
+
+**Comandos útiles de Docker:**
+```bash
+# Ver estado de los contenedores
+docker-compose ps
+
+# Ver logs de PostgreSQL
+docker logs mercatico_postgres
+
+# Detener la base de datos
+docker-compose stop
+
+# Reiniciar la base de datos
+docker-compose restart
+
+# Eliminar todo (cuidado: borra los datos)
+docker-compose down -v
+```
+
+**pgAdmin (Opcional)**: Si iniciaste pgAdmin, accede a [http://localhost:5050](http://localhost:5050)
+- Email: `admin@mercatico.cr`
+- Contraseña: `admin123`
+
+### Opción B: PostgreSQL Local (Instalación nativa)
+
+```bash
+# Instalar PostgreSQL (Ubuntu/Debian)
+sudo apt install postgresql postgresql-contrib python3.12-venv
+
+# Iniciar el servicio
+sudo service postgresql start
+
+# Crear base de datos
+sudo -u postgres createdb mercatico
+
+# Crear usuario (opcional)
+sudo -u postgres createuser -P tu_usuario
+# Luego otorga permisos:
+sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE mercatico TO tu_usuario;"
+```
+
+### Opción C: Supabase (Para desarrollo en la nube)
+
+1. Ve a [https://supabase.com](https://supabase.com)
+2. Crea un nuevo proyecto
+3. Ve a Settings > Database
+4. Copia la cadena de conexión (Connection String)
+5. Guarda las credenciales para el siguiente paso
 
 ## Paso 2: Configurar Backend (Django)
 
@@ -28,11 +92,14 @@ cd backend
 ```
 
 El script automáticamente:
-- Crea el entorno virtual
-- Instala todas las dependencias
-- Crea el archivo .env
-- Ejecuta las migraciones
-- Te pregunta si quieres crear un superusuario
+- ✅ Verifica que python3-venv esté instalado
+- ✅ Crea el entorno virtual
+- ✅ Instala todas las dependencias
+- ✅ Crea el archivo .env desde .env.example
+- ✅ Ejecuta las migraciones (si la base de datos está disponible)
+- ✅ Te pregunta si quieres crear un superusuario
+
+**Importante**: Después de ejecutar el script, edita el archivo `backend/.env` con tus credenciales de base de datos
 
 ### Opción B: Manual
 
@@ -61,30 +128,45 @@ python manage.py migrate
 python manage.py createsuperuser
 ```
 
-## Paso 3: Configurar Base de Datos
+## Paso 3: Editar Variables de Entorno
 
-### Opción A: PostgreSQL Local
+Edita el archivo `backend/.env` con tus credenciales de base de datos:
 
 ```bash
-# Crear base de datos
-createdb mercatico
-
-# Actualizar .env
-DATABASE_URL=postgresql://tu_usuario:tu_password@localhost:5432/mercatico
+cd backend
+nano .env  # o usa tu editor preferido (code .env, vim .env, etc.)
 ```
 
-### Opción B: Supabase (Recomendado para producción)
+### Para Docker PostgreSQL (más común):
 
-1. Ve a [https://supabase.com](https://supabase.com)
-2. Crea un nuevo proyecto
-3. Ve a Settings > Database
-4. Copia la cadena de conexión
-5. Actualiza tu `.env`:
+```env
+DATABASE_URL=postgresql://mercatico_user:mercatico_dev_password@localhost:5432/mercatico
+```
+
+### Para PostgreSQL Local (instalación nativa):
+
+```env
+DATABASE_URL=postgresql://postgres:tu_password@localhost:5432/mercatico
+```
+
+### Para Supabase:
 
 ```env
 DATABASE_URL=postgresql://postgres:[PASSWORD]@[HOST]:5432/postgres
 SUPABASE_URL=https://[PROJECT_ID].supabase.co
 SUPABASE_KEY=[ANON_KEY]
+SUPABASE_SERVICE_KEY=[SERVICE_KEY]
+```
+
+### Ejecutar Migraciones
+
+Si la base de datos no estaba disponible cuando ejecutaste el script de inicialización:
+
+```bash
+cd backend
+source venv/bin/activate
+python manage.py migrate
+python manage.py createsuperuser
 ```
 
 ## Paso 4: Configurar API de Grok (xAI)

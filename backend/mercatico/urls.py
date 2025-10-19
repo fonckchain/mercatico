@@ -10,8 +10,12 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView,
     TokenVerifyView,
 )
+from .views import api_root
 
 urlpatterns = [
+    # Root - API information
+    path('', api_root, name='api_root'),
+
     # Admin
     path('admin/', admin.site.urls),
 

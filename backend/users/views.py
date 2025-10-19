@@ -120,7 +120,7 @@ class SellerViewSet(viewsets.ReadOnlyModelViewSet):
     """
     queryset = User.objects.filter(user_type=User.UserType.SELLER, is_active=True)
     serializer_class = PublicSellerProfileSerializer
-    permission_classes = [permissions.AllowAnyReadOnly]
+    permission_classes = [permissions.AllowAny]
 
     def get_queryset(self):
         """Filter and optimize queryset."""
