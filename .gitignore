@@ -91,3 +91,4 @@ logs/
 *.pem
 *.key
 credentials.json
+*.deb
