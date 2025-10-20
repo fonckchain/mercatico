@@ -79,7 +79,19 @@ class Product(models.Model):
         default=0,
         validators=[MinValueValidator(0)]
     )
+    show_stock = models.BooleanField(
+        'mostrar stock',
+        default=False,
+        help_text='Si se muestra la cantidad de stock disponible a los compradores'
+    )
     is_available = models.BooleanField('disponible', default=True)
+
+    # Payment options
+    accepts_cash = models.BooleanField(
+        'acepta efectivo',
+        default=True,
+        help_text='Si el vendedor acepta pago en efectivo para este producto'
+    )
 
     # Images (stored as JSON array of URLs)
     images = models.JSONField(

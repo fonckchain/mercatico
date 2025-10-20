@@ -5,6 +5,8 @@ class Product {
   final String description;
   final double price;
   final int stock;
+  final bool showStock;
+  final bool acceptsCash;
   final String? imageUrl;
   final String category;
   final String sellerId;
@@ -18,6 +20,8 @@ class Product {
     required this.description,
     required this.price,
     required this.stock,
+    this.showStock = false,
+    this.acceptsCash = true,
     this.imageUrl,
     required this.category,
     required this.sellerId,
@@ -43,6 +47,8 @@ class Product {
       description: json['description'] ?? '',
       price: parsePrice(json['price']),
       stock: json['stock'] ?? 0,
+      showStock: json['show_stock'] ?? false,
+      acceptsCash: json['accepts_cash'] ?? true,
       imageUrl: json['image_url'],
       category: json['category'] ?? '',
       sellerId: json['seller'] ?? '',
@@ -62,6 +68,8 @@ class Product {
       'description': description,
       'price': price,
       'stock': stock,
+      'show_stock': showStock,
+      'accepts_cash': acceptsCash,
       'image_url': imageUrl,
       'category': category,
       'seller': sellerId,

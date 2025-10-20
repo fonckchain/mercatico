@@ -24,6 +24,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
 
   String _selectedCategory = 'Artesanías';
   bool _isActive = true;
+  bool _showStock = false;
   bool _isLoading = false;
   String? _errorMessage;
 
@@ -64,6 +65,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
           ? productCategory
           : _categories.first;
       _isActive = widget.product!.isActive;
+      _showStock = widget.product!.showStock;
     }
   }
 
@@ -95,6 +97,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         'description': _descriptionController.text.trim(),
         'price': double.parse(_priceController.text),
         'stock': int.parse(_stockController.text),
+        'show_stock': _showStock,
         'category': categoryId,  // Send UUID instead of name
         'is_active': _isActive,
       };
@@ -197,7 +200,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                 decoration: const InputDecoration(
                   labelText: 'Precio (₡)',
                   border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.attach_money),
+                  prefixIcon: Icon(Icons.payments),
                   hintText: '0.00',
                 ),
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -276,6 +279,24 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                 onChanged: (value) {
                   setState(() {
                     _isActive = value;
+                  });
+                },
+                activeColor: Colors.green,
+              ),
+              const SizedBox(height: 8),
+
+              // Mostrar stock
+              SwitchListTile(
+                title: const Text('Mostrar cantidad de stock'),
+                subtitle: Text(
+                  _showStock
+                      ? 'Los compradores verán cuántas unidades hay disponibles'
+                      : 'Los compradores solo verán si hay stock o no',
+                ),
+                value: _showStock,
+                onChanged: (value) {
+                  setState(() {
+                    _showStock = value;
                   });
                 },
                 activeColor: Colors.green,

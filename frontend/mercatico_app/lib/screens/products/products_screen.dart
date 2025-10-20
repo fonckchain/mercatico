@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../core/services/api_service.dart';
 import '../../core/services/auth_service.dart';
+import '../../core/services/cart_service.dart';
 import '../../models/product.dart';
 import '../buyer/product_detail_screen.dart';
+import '../buyer/cart_screen.dart';
 
 class ProductsScreen extends StatefulWidget {
   const ProductsScreen({super.key});
@@ -14,6 +16,7 @@ class ProductsScreen extends StatefulWidget {
 class _ProductsScreenState extends State<ProductsScreen> {
   final ApiService _apiService = ApiService();
   final AuthService _authService = AuthService();
+  final CartService _cartService = CartService();
 
   List<Product> _products = [];
   bool _isLoading = true;
@@ -23,7 +26,12 @@ class _ProductsScreenState extends State<ProductsScreen> {
   @override
   void initState() {
     super.initState();
+    _initializeCart();
     _loadProducts();
+  }
+
+  Future<void> _initializeCart() async {
+    await _cartService.initialize();
   }
 
   Future<void> _loadProducts() async {
@@ -67,12 +75,20 @@ class _ProductsScreenState extends State<ProductsScreen> {
         foregroundColor: Colors.white,
         actions: [
           IconButton(
-            icon: const Icon(Icons.shopping_cart),
-            onPressed: () {
-              // TODO: Navegar al carrito
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Carrito próximamente')),
+            icon: Badge(
+              label: Text('${_cartService.itemCount}'),
+              isLabelVisible: _cartService.itemCount > 0,
+              child: const Icon(Icons.shopping_cart),
+            ),
+            onPressed: () async {
+              await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const CartScreen(),
+                ),
               );
+              // Refresh to update badge count
+              setState(() {});
             },
           ),
           IconButton(
@@ -282,7 +298,9 @@ class _ProductCard extends StatelessWidget {
                       Expanded(
                         child: Text(
                           product.hasStock
-                              ? '${product.stock} disponibles'
+                              ? (product.showStock
+                                  ? '${product.stock} disponibles'
+                                  : 'Disponible')
                               : 'Sin stock',
                           style: TextStyle(
                             fontSize: 12,

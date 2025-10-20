@@ -15,17 +15,24 @@ class FlexibleCategoryField(serializers.Field):
 
     def to_internal_value(self, data):
         """Accept both UUID and name for writing."""
+        print(f"DEBUG: FlexibleCategoryField received data: {data}, type: {type(data)}")
         if not data:
             raise serializers.ValidationError("Categoría es requerida.")
 
         # Try to find by UUID first
         try:
-            return Category.objects.get(id=data)
-        except (Category.DoesNotExist, ValueError, TypeError):
+            category = Category.objects.get(id=data)
+            print(f"DEBUG: Found category by UUID: {category}")
+            return category
+        except (Category.DoesNotExist, ValueError, TypeError) as e:
+            print(f"DEBUG: UUID lookup failed: {e}, trying by name...")
             # If not UUID, try by name
             try:
-                return Category.objects.get(name=data)
+                category = Category.objects.get(name=data)
+                print(f"DEBUG: Found category by name: {category}")
+                return category
             except Category.DoesNotExist:
+                print(f"DEBUG: Category not found by name either")
                 raise serializers.ValidationError(f"Categoría '{data}' no encontrada.")
 
 
@@ -50,7 +57,6 @@ class ProductImageSerializer(serializers.ModelSerializer):
 class ProductSerializer(serializers.ModelSerializer):
     """Serializer for Product model."""
 
-    category = FlexibleCategoryField()
     category_name = serializers.CharField(source='category.name', read_only=True)
     seller_name = serializers.CharField(source='seller.seller_profile.business_name', read_only=True)
     seller_id = serializers.UUIDField(source='seller.id', read_only=True)
@@ -70,6 +76,8 @@ class ProductSerializer(serializers.ModelSerializer):
             'category_name',
             'price',
             'stock',
+            'show_stock',
+            'accepts_cash',
             'is_available',
             'images',
             'main_image',
@@ -80,6 +88,27 @@ class ProductSerializer(serializers.ModelSerializer):
             'updated_at',
         ]
         read_only_fields = ['id', 'seller', 'views_count', 'sales_count', 'created_at', 'updated_at']
+
+    def to_internal_value(self, data):
+        """Convert category name to UUID before validation."""
+        # If category is a string (not a UUID), try to find it by name
+        if 'category' in data and isinstance(data['category'], str):
+            try:
+                # First try if it's already a valid UUID
+                import uuid
+                uuid.UUID(data['category'])
+            except (ValueError, AttributeError):
+                # Not a UUID, try to find by name
+                try:
+                    category = Category.objects.get(name=data['category'])
+                    # Create a mutable copy of data
+                    data = data.copy() if hasattr(data, 'copy') else dict(data)
+                    data['category'] = str(category.id)
+                    print(f"DEBUG: Converted category name '{data['category']}' to UUID: {category.id}")
+                except Category.DoesNotExist:
+                    pass  # Let the parent validation handle this error
+
+        return super().to_internal_value(data)
 
     def get_main_image(self, obj):
         """Get the main image URL."""
@@ -117,6 +146,7 @@ class ProductListSerializer(serializers.ModelSerializer):
             'seller_rating',
             'is_available',
             'stock',
+            'show_stock',
         ]
 
     def get_main_image(self, obj):
