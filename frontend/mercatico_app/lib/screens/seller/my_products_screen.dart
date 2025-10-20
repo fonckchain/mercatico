@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/services/api_service.dart';
 import '../../core/services/auth_service.dart';
 import '../../models/product.dart';
+import 'product_form_screen.dart';
 
 class MyProductsScreen extends StatefulWidget {
   const MyProductsScreen({super.key});
@@ -170,13 +171,16 @@ class _MyProductsScreenState extends State<MyProductsScreen> {
                           ),
                           const SizedBox(height: 24),
                           ElevatedButton.icon(
-                            onPressed: () {
-                              // TODO: Navegar a crear producto
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Crear producto próximamente'),
+                            onPressed: () async {
+                              final result = await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const ProductFormScreen(),
                                 ),
                               );
+                              if (result == true) {
+                                _loadMyProducts(); // Recargar productos
+                              }
                             },
                             icon: const Icon(Icons.add),
                             label: const Text('Crear Producto'),
@@ -216,11 +220,16 @@ class _MyProductsScreenState extends State<MyProductsScreen> {
                       ),
                     ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          // TODO: Navegar a crear producto
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Crear producto próximamente')),
+        onPressed: () async {
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const ProductFormScreen(),
+            ),
           );
+          if (result == true) {
+            _loadMyProducts(); // Recargar productos
+          }
         },
         icon: const Icon(Icons.add),
         label: const Text('Nuevo Producto'),
