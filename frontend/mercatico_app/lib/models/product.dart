@@ -28,11 +28,20 @@ class Product {
 
   /// Crear producto desde JSON del API
   factory Product.fromJson(Map<String, dynamic> json) {
+    // Parsear precio - puede venir como String o num
+    double parsePrice(dynamic value) {
+      if (value == null) return 0.0;
+      if (value is double) return value;
+      if (value is int) return value.toDouble();
+      if (value is String) return double.tryParse(value) ?? 0.0;
+      return 0.0;
+    }
+
     return Product(
       id: json['id'] ?? '',
       name: json['name'] ?? '',
       description: json['description'] ?? '',
-      price: (json['price'] ?? 0).toDouble(),
+      price: parsePrice(json['price']),
       stock: json['stock'] ?? 0,
       imageUrl: json['image_url'],
       category: json['category'] ?? '',
