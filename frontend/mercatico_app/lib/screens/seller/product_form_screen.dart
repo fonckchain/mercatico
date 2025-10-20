@@ -58,11 +58,11 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
 
     if (widget.product != null) {
       // Validar que la categoría del producto esté en la lista
-      // Si no está, usar 'Otros' como default
+      // Si no está, usar la primera categoría disponible
       final productCategory = widget.product!.category;
       _selectedCategory = _categories.contains(productCategory)
           ? productCategory
-          : 'Otros';
+          : _categories.first;
       _isActive = widget.product!.isActive;
     }
   }
