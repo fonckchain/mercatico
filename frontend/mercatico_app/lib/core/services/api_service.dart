@@ -1,12 +1,15 @@
 import 'package:dio/dio.dart';
 import '../constants/api_constants.dart';
 
-/// Servicio centralizado para llamadas a la API
+/// Servicio centralizado para llamadas a la API (Singleton)
 class ApiService {
+  static final ApiService _instance = ApiService._internal();
+  factory ApiService() => _instance;
+
   late final Dio _dio;
   String? _accessToken;
 
-  ApiService() {
+  ApiService._internal() {
     _dio = Dio(
       BaseOptions(
         baseUrl: ApiConstants.apiBaseUrl,
