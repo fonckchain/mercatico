@@ -3,25 +3,31 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 
 /// Constantes de API para MercaTico
 class ApiConstants {
-  // Base URLs
-  static const String baseUrl = 'http://127.0.0.1:8000/api';
-  static const String baseUrlAndroidEmulator = 'http://10.0.2.2:8000/api';
+  // Production URL
+  static const String productionUrl = 'https://mercatico-production.up.railway.app/api';
+
+  // Development URLs (for local testing)
+  static const String devUrl = 'http://127.0.0.1:8000/api';
+  static const String devUrlAndroidEmulator = 'http://10.0.2.2:8000/api';
+
+  // Set to true to use local backend, false for production
+  static const bool useLocalBackend = false;
 
   // Determinar URL base según la plataforma
   static String get apiBaseUrl {
-    if (kIsWeb) {
-      // Web: usa localhost
-      return baseUrl;
-    } else if (Platform.isAndroid) {
-      // Android: usa 10.0.2.2 para emulador (accede al host)
-      return baseUrlAndroidEmulator;
-    } else if (Platform.isIOS) {
-      // iOS: localhost funciona en simulador
-      return baseUrl;
-    } else {
-      // Desktop (Linux, macOS, Windows): usa localhost
-      return baseUrl;
+    // If using local backend for development
+    if (useLocalBackend) {
+      if (kIsWeb) {
+        return devUrl;
+      } else if (Platform.isAndroid) {
+        return devUrlAndroidEmulator;
+      } else {
+        return devUrl;
+      }
     }
+
+    // Use production URL
+    return productionUrl;
   }
 
   // Auth endpoints
@@ -65,13 +71,16 @@ class ApiConstants {
 
   // Health check (not under /api)
   static String get healthUrl {
-    if (kIsWeb) {
-      return 'http://127.0.0.1:8000/health/';
-    } else if (Platform.isAndroid) {
-      return 'http://10.0.2.2:8000/health/';
-    } else {
-      return 'http://127.0.0.1:8000/health/';
+    if (useLocalBackend) {
+      if (kIsWeb) {
+        return 'http://127.0.0.1:8000/health/';
+      } else if (Platform.isAndroid) {
+        return 'http://10.0.2.2:8000/health/';
+      } else {
+        return 'http://127.0.0.1:8000/health/';
+      }
     }
+    return 'https://mercatico-production.up.railway.app/health/';
   }
 
   // Headers
