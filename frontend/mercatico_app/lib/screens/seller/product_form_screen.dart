@@ -54,7 +54,12 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     );
 
     if (widget.product != null) {
-      _selectedCategory = widget.product!.category;
+      // Validar que la categoría del producto esté en la lista
+      // Si no está, usar 'Otros' como default
+      final productCategory = widget.product!.category;
+      _selectedCategory = _categories.contains(productCategory)
+          ? productCategory
+          : 'Otros';
       _isActive = widget.product!.isActive;
     }
   }
