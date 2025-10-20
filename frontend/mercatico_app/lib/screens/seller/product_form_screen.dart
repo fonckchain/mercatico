@@ -27,18 +27,21 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
   bool _isLoading = false;
   String? _errorMessage;
 
-  final List<String> _categories = [
-    'Artesanías',
-    'Ropa y Accesorios',
-    'Panadería y Repostería',
-    'Frutas y Verduras',
-    'Productos Orgánicos',
-    'Comida Típica',
-    'Bebidas',
-    'Decoración',
-    'Joyería',
-    'Otros',
-  ];
+  // Map category names to their UUIDs from backend
+  final Map<String, String> _categoryMap = {
+    'Accesorios': 'd2784ad5-cee0-4f6a-a056-1bab895555f2',
+    'Artesanías': 'c22fc3aa-c023-4b44-92ba-50ff09d040c3',
+    'Comidas Preparadas': '943f0ec2-7c57-41fe-b5a3-ee42bc161936',
+    'Decoración': 'cba78fc2-0500-4071-b03b-3c4ea4dd0df0',
+    'Frutas y Verduras': 'ec0f7f60-5be6-4774-8c2c-a9023792a527',
+    'Joyería': 'ce78bd01-da93-4cf9-a48f-8d0ab08ea481',
+    'Panadería': '71e4b389-7939-4f0f-a883-b2fb5c13f2d0',
+    'Productos Orgánicos': '03e8edcd-cdd4-48f4-a243-109984f1eef5',
+    'Repostería': 'd72b1c5c-a2a2-450e-ab2b-a64e904cf62c',
+    'Ropa': '59d7ced4-29d3-4902-9913-5873bf4508f4',
+  };
+
+  List<String> get _categories => _categoryMap.keys.toList();
 
   @override
   void initState() {
@@ -84,12 +87,15 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     });
 
     try {
+      // Get the category UUID from the selected category name
+      final categoryId = _categoryMap[_selectedCategory];
+
       final productData = {
         'name': _nameController.text.trim(),
         'description': _descriptionController.text.trim(),
         'price': double.parse(_priceController.text),
         'stock': int.parse(_stockController.text),
-        'category': _selectedCategory,
+        'category': categoryId,  // Send UUID instead of name
         'is_active': _isActive,
       };
 
