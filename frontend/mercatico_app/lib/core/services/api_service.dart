@@ -117,6 +117,21 @@ class ApiService {
     return response.data;
   }
 
+  /// Actualizar producto (vendedores)
+  Future<Map<String, dynamic>> updateProduct(
+      String id, Map<String, dynamic> productData) async {
+    final response = await _dio.put(
+      ApiConstants.productDetail(id),
+      data: productData,
+    );
+    return response.data;
+  }
+
+  /// Eliminar producto (vendedores)
+  Future<void> deleteProduct(String id) async {
+    await _dio.delete(ApiConstants.productDetail(id));
+  }
+
   // ==================== ORDERS ====================
 
   /// Obtener lista de órdenes

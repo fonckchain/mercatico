@@ -101,7 +101,8 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
           );
         }
       } else {
-        // TODO: Actualizar producto existente
+        // Actualizar producto existente
+        await _apiService.updateProduct(widget.product!.id, productData);
         if (mounted) {
           Navigator.of(context).pop(true);
           ScaffoldMessenger.of(context).showSnackBar(

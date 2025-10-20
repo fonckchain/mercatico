@@ -82,21 +82,25 @@ class _MyProductsScreenState extends State<MyProductsScreen> {
 
     if (confirmed == true) {
       try {
-        // TODO: Implementar DELETE en API service
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Producto eliminado correctamente'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        _loadMyProducts();
+        await _apiService.deleteProduct(product.id);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Producto eliminado correctamente'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          _loadMyProducts();
+        }
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error al eliminar: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error al eliminar: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     }
   }
@@ -204,15 +208,18 @@ class _MyProductsScreenState extends State<MyProductsScreen> {
                         itemBuilder: (context, index) {
                           return _ProductListItem(
                             product: _myProducts[index],
-                            onEdit: () {
-                              // TODO: Navegar a editar
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    'Editar ${_myProducts[index].name}',
+                            onEdit: () async {
+                              final result = await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => ProductFormScreen(
+                                    product: _myProducts[index],
                                   ),
                                 ),
                               );
+                              if (result == true) {
+                                _loadMyProducts(); // Recargar productos
+                              }
                             },
                             onDelete: () => _deleteProduct(_myProducts[index]),
                           );
