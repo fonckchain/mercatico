@@ -15,8 +15,8 @@ PyJWT==2.8.0
 # Environment
 python-decouple==3.8
 
-# Image handling - upgraded for Python 3.13 compatibility
-Pillow==10.4.0
+# Image handling
+Pillow==10.2.0
 
 # Server
 gunicorn==21.2.0
