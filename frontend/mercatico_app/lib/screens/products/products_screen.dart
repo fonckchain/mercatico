@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/services/api_service.dart';
 import '../../core/services/auth_service.dart';
 import '../../models/product.dart';
+import '../buyer/product_detail_screen.dart';
 
 class ProductsScreen extends StatefulWidget {
   const ProductsScreen({super.key});
@@ -168,11 +169,11 @@ class _ProductsScreenState extends State<ProductsScreen> {
                                 return _ProductCard(
                                   product: _products[index],
                                   onTap: () {
-                                    // TODO: Navegar a detalle
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          'Detalle de ${_products[index].name}',
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => ProductDetailScreen(
+                                          productId: _products[index].id,
                                         ),
                                       ),
                                     );
