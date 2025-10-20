@@ -61,6 +61,18 @@ class ProductSerializer(serializers.ModelSerializer):
         """Get the main image URL."""
         return obj.get_main_image()
 
+    def validate_category(self, value):
+        """Allow category to be passed as name or ID."""
+        if isinstance(value, str):
+            # If it's a string, try to find the category by name
+            try:
+                category = Category.objects.get(name=value)
+                return category
+            except Category.DoesNotExist:
+                raise serializers.ValidationError(f"Categoría '{value}' no encontrada.")
+        # If it's already a Category instance or UUID, return as is
+        return value
+
     def validate_images(self, value):
         """Validate that images array has max 5 items."""
         if len(value) > 5:

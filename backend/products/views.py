@@ -92,6 +92,21 @@ class ProductViewSet(viewsets.ModelViewSet):
         """Set seller to current user."""
         serializer.save(seller=self.request.user)
 
+    def perform_update(self, serializer):
+        """Only allow sellers to update their own products."""
+        product = self.get_object()
+        if product.seller != self.request.user:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("No puedes editar productos de otros vendedores")
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        """Only allow sellers to delete their own products."""
+        if instance.seller != self.request.user:
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("No puedes eliminar productos de otros vendedores")
+        instance.delete()
+
     def retrieve(self, request, *args, **kwargs):
         """Increment view count when retrieving a product."""
         instance = self.get_object()
