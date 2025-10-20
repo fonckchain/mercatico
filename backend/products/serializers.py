@@ -6,6 +6,29 @@ from products.models import Category, Product, ProductImage
 from users.serializers import PublicSellerProfileSerializer
 
 
+class FlexibleCategoryField(serializers.Field):
+    """Custom field that accepts both category UUID and category name."""
+
+    def to_representation(self, value):
+        """Return the category UUID for reading."""
+        return str(value.id) if value else None
+
+    def to_internal_value(self, data):
+        """Accept both UUID and name for writing."""
+        if not data:
+            raise serializers.ValidationError("Categoría es requerida.")
+
+        # Try to find by UUID first
+        try:
+            return Category.objects.get(id=data)
+        except (Category.DoesNotExist, ValueError, TypeError):
+            # If not UUID, try by name
+            try:
+                return Category.objects.get(name=data)
+            except Category.DoesNotExist:
+                raise serializers.ValidationError(f"Categoría '{data}' no encontrada.")
+
+
 class CategorySerializer(serializers.ModelSerializer):
     """Serializer for Category model."""
 
@@ -27,6 +50,7 @@ class ProductImageSerializer(serializers.ModelSerializer):
 class ProductSerializer(serializers.ModelSerializer):
     """Serializer for Product model."""
 
+    category = FlexibleCategoryField()
     category_name = serializers.CharField(source='category.name', read_only=True)
     seller_name = serializers.CharField(source='seller.seller_profile.business_name', read_only=True)
     seller_id = serializers.UUIDField(source='seller.id', read_only=True)
@@ -60,18 +84,6 @@ class ProductSerializer(serializers.ModelSerializer):
     def get_main_image(self, obj):
         """Get the main image URL."""
         return obj.get_main_image()
-
-    def validate_category(self, value):
-        """Allow category to be passed as name or ID."""
-        if isinstance(value, str):
-            # If it's a string, try to find the category by name
-            try:
-                category = Category.objects.get(name=value)
-                return category
-            except Category.DoesNotExist:
-                raise serializers.ValidationError(f"Categoría '{value}' no encontrada.")
-        # If it's already a Category instance or UUID, return as is
-        return value
 
     def validate_images(self, value):
         """Validate that images array has max 5 items."""
