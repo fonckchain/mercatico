@@ -157,6 +157,18 @@ class SellerProfile(models.Model):
         help_text='Indica si el vendedor acepta pagos en efectivo al momento de la entrega'
     )
 
+    # Delivery options
+    offers_pickup = models.BooleanField(
+        'ofrece recogida',
+        default=True,
+        help_text='Si el vendedor permite que clientes recojan productos en su ubicación'
+    )
+    offers_delivery = models.BooleanField(
+        'ofrece entrega',
+        default=False,
+        help_text='Si el vendedor ofrece servicio de entrega a domicilio'
+    )
+
     # Business logo/photo
     logo = models.ImageField(
         'logo/foto',

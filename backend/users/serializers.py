@@ -32,6 +32,8 @@ class SellerProfileSerializer(serializers.ModelSerializer):
             'description',
             'sinpe_number',
             'accepts_cash',
+            'offers_pickup',
+            'offers_delivery',
             'logo',
             'province',
             'canton',
@@ -212,6 +214,10 @@ class PublicSellerProfileSerializer(serializers.ModelSerializer):
     logo = serializers.ImageField(source='seller_profile.logo')
     province = serializers.CharField(source='seller_profile.province')
     canton = serializers.CharField(source='seller_profile.canton')
+    district = serializers.CharField(source='seller_profile.district')
+    address = serializers.CharField(source='seller_profile.address')
+    offers_pickup = serializers.BooleanField(source='seller_profile.offers_pickup')
+    offers_delivery = serializers.BooleanField(source='seller_profile.offers_delivery')
     rating_avg = serializers.DecimalField(
         source='seller_profile.rating_avg',
         max_digits=3,
@@ -233,6 +239,10 @@ class PublicSellerProfileSerializer(serializers.ModelSerializer):
             'logo',
             'province',
             'canton',
+            'district',
+            'address',
+            'offers_pickup',
+            'offers_delivery',
             'rating_avg',
             'rating_count',
             'total_sales',

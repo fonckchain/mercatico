@@ -132,6 +132,21 @@ class ApiService {
     await _dio.delete(ApiConstants.productDetail(id));
   }
 
+  // ==================== SELLER PROFILE ====================
+
+  /// Actualizar perfil del vendedor
+  Future<Map<String, dynamic>> updateSellerProfile(
+    Map<String, dynamic> profileData,
+  ) async {
+    final response = await _dio.patch(
+      '/users/me/',
+      data: {
+        'seller_profile': profileData,
+      },
+    );
+    return response.data;
+  }
+
   // ==================== ORDERS ====================
 
   /// Obtener lista de órdenes

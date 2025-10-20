@@ -11,7 +11,7 @@ class ApiConstants {
   static const String devUrlAndroidEmulator = 'http://10.0.2.2:8000/api';
 
   // Set to true to use local backend, false for production
-  static const bool useLocalBackend = true;
+  static const bool useLocalBackend = false;
 
   // Determinar URL base según la plataforma
   static String get apiBaseUrl {

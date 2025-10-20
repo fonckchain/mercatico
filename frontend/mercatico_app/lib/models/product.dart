@@ -1,3 +1,5 @@
+import 'seller_info.dart';
+
 /// Modelo de producto
 class Product {
   final String id;
@@ -13,6 +15,7 @@ class Product {
   final String sellerName;
   final bool isActive;
   final DateTime createdAt;
+  final SellerInfo? sellerInfo; // Información completa del vendedor (solo en detalle)
 
   Product({
     required this.id,
@@ -28,6 +31,7 @@ class Product {
     required this.sellerName,
     required this.isActive,
     required this.createdAt,
+    this.sellerInfo,
   });
 
   /// Crear producto desde JSON del API
@@ -57,6 +61,9 @@ class Product {
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'])
           : DateTime.now(),
+      sellerInfo: json['seller_info'] != null
+          ? SellerInfo.fromJson(json['seller_info'])
+          : null,
     );
   }
 
