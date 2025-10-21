@@ -59,7 +59,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     # Authentication fields
     email = models.EmailField('correo electrónico', unique=True, max_length=255)
     phone_regex = RegexValidator(
-        regex=r'^\+?506?\d{8}$',
+        regex=r'^(\+506)?\d{8}$',
         message="El número debe estar en formato: '+50612345678' o '12345678'"
     )
     phone = models.CharField(
@@ -140,7 +140,7 @@ class SellerProfile(models.Model):
 
     # SINPE Móvil information
     sinpe_regex = RegexValidator(
-        regex=r'^\+?506?\d{8}$',
+        regex=r'^(\+506)?\d{8}$',
         message="El número SINPE debe estar en formato: '+50612345678' o '12345678'"
     )
     sinpe_number = models.CharField(
