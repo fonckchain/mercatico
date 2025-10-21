@@ -48,20 +48,22 @@ class AuthService {
     required String firstName,
     required String lastName,
     required String phone,
-    required String role, // 'buyer' o 'seller'
+    required String role, // 'BUYER' o 'SELLER'
     String? businessName,
     String? businessDescription,
+    String? sinpeNumber,
   }) async {
     try {
       final userData = {
         'email': email,
         'password': password,
+        'password_confirm': password, // API requires confirmation
         'first_name': firstName,
         'last_name': lastName,
         'phone': phone,
-        'role': role,
+        'user_type': role, // Backend expects 'user_type' not 'role'
         if (businessName != null) 'business_name': businessName,
-        if (businessDescription != null) 'business_description': businessDescription,
+        if (sinpeNumber != null) 'sinpe_number': sinpeNumber,
       };
 
       final response = await _apiService.register(userData);

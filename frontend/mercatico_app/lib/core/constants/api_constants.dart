@@ -34,7 +34,7 @@ class ApiConstants {
   static const String login = '/token/';
   static const String refresh = '/token/refresh/';
   static const String verify = '/token/verify/';
-  static const String register = '/auth/register/';
+  static const String register = '/auth/users/register/';
 
   // User endpoints
   static const String users = '/auth/users/';
