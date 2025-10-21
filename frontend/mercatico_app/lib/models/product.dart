@@ -16,6 +16,8 @@ class Product {
   final bool isActive;
   final DateTime createdAt;
   final SellerInfo? sellerInfo; // Información completa del vendedor (solo en detalle)
+  final double? latitude;
+  final double? longitude;
 
   Product({
     required this.id,
@@ -32,6 +34,8 @@ class Product {
     required this.isActive,
     required this.createdAt,
     this.sellerInfo,
+    this.latitude,
+    this.longitude,
   });
 
   /// Crear producto desde JSON del API
@@ -63,6 +67,12 @@ class Product {
           : DateTime.now(),
       sellerInfo: json['seller_info'] != null
           ? SellerInfo.fromJson(json['seller_info'])
+          : null,
+      latitude: json['latitude'] != null
+          ? double.tryParse(json['latitude'].toString())
+          : null,
+      longitude: json['longitude'] != null
+          ? double.tryParse(json['longitude'].toString())
           : null,
     );
   }

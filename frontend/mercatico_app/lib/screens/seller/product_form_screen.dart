@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../core/services/api_service.dart';
 import '../../models/product.dart';
+import '../../widgets/location_picker.dart';
 
 class ProductFormScreen extends StatefulWidget {
   final Product? product; // Si es null, es crear; si tiene valor, es editar
@@ -32,6 +34,11 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
   // Map category IDs to names, loaded dynamically from backend
   Map<String, String> _categories = {};
 
+  // GPS location
+  double? _latitude;
+  double? _longitude;
+  bool _loadingSellerLocation = true;
+
   List<String> get _categoryIds => _categories.keys.toList();
   List<String> get _categoryNames => _categories.values.toList();
 
@@ -53,6 +60,13 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     if (widget.product != null) {
       _isActive = widget.product!.isActive;
       _showStock = widget.product!.showStock;
+      // Load product location if available
+      _latitude = widget.product!.latitude;
+      _longitude = widget.product!.longitude;
+      _loadingSellerLocation = false;
+    } else {
+      // If creating new product, load seller's default location
+      _loadSellerLocation();
     }
 
     // Load categories from backend (will set category after loading)
@@ -98,6 +112,46 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     }
   }
 
+  Future<void> _loadSellerLocation() async {
+    try {
+      final profile = await _apiService.getSellerProfile();
+      setState(() {
+        _latitude = profile['latitude'] != null
+            ? double.tryParse(profile['latitude'].toString())
+            : null;
+        _longitude = profile['longitude'] != null
+            ? double.tryParse(profile['longitude'].toString())
+            : null;
+        _loadingSellerLocation = false;
+      });
+    } catch (e) {
+      setState(() {
+        _loadingSellerLocation = false;
+      });
+    }
+  }
+
+  Future<void> _openLocationPicker() async {
+    final initialLocation = (_latitude != null && _longitude != null)
+        ? LatLng(_latitude!, _longitude!)
+        : null;
+
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => LocationPicker(
+          initialLocation: initialLocation,
+          onLocationSelected: (location, address) {
+            setState(() {
+              _latitude = location.latitude;
+              _longitude = location.longitude;
+            });
+          },
+        ),
+      ),
+    );
+  }
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -135,6 +189,8 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         'is_available': _isActive,  // Backend expects 'is_available' not 'is_active'
         'accepts_cash': true,  // Default value
         'images': [],  // Default empty array
+        'latitude': _latitude?.toString(),
+        'longitude': _longitude?.toString(),
       };
 
       if (widget.product == null) {
@@ -308,6 +364,81 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                     }
                     return null;
                   },
+                ),
+              const SizedBox(height: 16),
+
+              // Ubicación del producto
+              const Text(
+                'Ubicación del Producto',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Selecciona dónde se encuentra el producto',
+                style: TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+              const SizedBox(height: 12),
+
+              // Location selector button
+              if (_loadingSellerLocation)
+                const Center(child: CircularProgressIndicator())
+              else
+                OutlinedButton.icon(
+                  onPressed: _openLocationPicker,
+                  icon: const Icon(Icons.map),
+                  label: Text(
+                    _latitude != null && _longitude != null
+                        ? 'Cambiar Ubicación'
+                        : 'Seleccionar Ubicación',
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.green,
+                    side: const BorderSide(color: Colors.green),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                  ),
+                ),
+              const SizedBox(height: 12),
+
+              // Display current location if set
+              if (_latitude != null && _longitude != null)
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.green[50],
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.green[200]!),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.check_circle, color: Colors.green[700]),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Ubicación seleccionada',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.green[700],
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Lat: ${_latitude!.toStringAsFixed(6)}, Lng: ${_longitude!.toStringAsFixed(6)}',
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               const SizedBox(height: 16),
 

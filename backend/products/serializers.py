@@ -80,6 +80,8 @@ class ProductSerializer(serializers.ModelSerializer):
             'accepts_cash',
             'is_available',
             'images',
+            'latitude',
+            'longitude',
             'main_image',
             'is_in_stock',
             'views_count',
