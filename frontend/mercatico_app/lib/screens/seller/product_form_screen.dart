@@ -179,7 +179,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     });
 
     try {
-      final productData = {
+      final productData = <String, dynamic>{
         'name': _nameController.text.trim(),
         'description': _descriptionController.text.trim(),
         'price': double.parse(_priceController.text),
@@ -189,9 +189,14 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         'is_available': _isActive,  // Backend expects 'is_available' not 'is_active'
         'accepts_cash': true,  // Default value
         'images': [],  // Default empty array
-        'latitude': _latitude?.toString(),
-        'longitude': _longitude?.toString(),
       };
+
+      // Only include GPS coordinates if they are not null
+      // Round to 6 decimal places to match backend validation
+      if (_latitude != null && _longitude != null) {
+        productData['latitude'] = _latitude!.toStringAsFixed(6);
+        productData['longitude'] = _longitude!.toStringAsFixed(6);
+      }
 
       if (widget.product == null) {
         // Crear nuevo producto
