@@ -183,6 +183,24 @@ class SellerProfile(models.Model):
     district = models.CharField('distrito', max_length=50, blank=True)
     address = models.TextField('dirección exacta', blank=True)
 
+    # GPS coordinates
+    latitude = models.DecimalField(
+        'latitud',
+        max_digits=9,
+        decimal_places=6,
+        null=True,
+        blank=True,
+        help_text='Coordenada de latitud GPS'
+    )
+    longitude = models.DecimalField(
+        'longitud',
+        max_digits=9,
+        decimal_places=6,
+        null=True,
+        blank=True,
+        help_text='Coordenada de longitud GPS'
+    )
+
     # Statistics
     total_sales = models.DecimalField(
         'total de ventas',

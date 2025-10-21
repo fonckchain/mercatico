@@ -39,6 +39,8 @@ class SellerProfileSerializer(serializers.ModelSerializer):
             'canton',
             'district',
             'address',
+            'latitude',
+            'longitude',
             'total_sales',
             'rating_avg',
             'rating_count',

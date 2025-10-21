@@ -49,14 +49,13 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       text: widget.product != null ? widget.product!.stock.toString() : '',
     );
 
-    // Load product data if editing
+    // Load other product data if editing (but NOT category yet)
     if (widget.product != null) {
-      _selectedCategoryId = widget.product!.category;
       _isActive = widget.product!.isActive;
       _showStock = widget.product!.showStock;
     }
 
-    // Load categories from backend
+    // Load categories from backend (will set category after loading)
     _loadCategories();
   }
 
@@ -71,9 +70,21 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
               cat['id'].toString(): cat['name'].toString()
           };
 
-          // Set default category if creating new product
-          if (widget.product == null && _categories.isNotEmpty) {
-            _selectedCategoryId = _categories.keys.first;
+          // Set category based on context
+          if (widget.product != null) {
+            // Editing: use product's category if it exists in loaded categories
+            final productCategoryId = widget.product!.category;
+            if (_categories.containsKey(productCategoryId)) {
+              _selectedCategoryId = productCategoryId;
+            } else {
+              // Category doesn't exist, use first available
+              _selectedCategoryId = _categories.keys.first;
+            }
+          } else {
+            // Creating: use first category as default
+            if (_categories.isNotEmpty) {
+              _selectedCategoryId = _categories.keys.first;
+            }
           }
 
           _loadingCategories = false;
