@@ -86,6 +86,33 @@ class UserSerializer(serializers.ModelSerializer):
 
         return data
 
+    def update(self, instance, validated_data):
+        """Update user and nested profile data."""
+        # Extract nested profile data
+        seller_profile_data = validated_data.pop('seller_profile', None)
+        buyer_profile_data = validated_data.pop('buyer_profile', None)
+
+        # Update user fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        # Update seller profile if provided
+        if seller_profile_data and instance.user_type == User.UserType.SELLER:
+            seller_profile = instance.seller_profile
+            for attr, value in seller_profile_data.items():
+                setattr(seller_profile, attr, value)
+            seller_profile.save()
+
+        # Update buyer profile if provided
+        if buyer_profile_data and instance.user_type == User.UserType.BUYER:
+            buyer_profile = instance.buyer_profile
+            for attr, value in buyer_profile_data.items():
+                setattr(buyer_profile, attr, value)
+            buyer_profile.save()
+
+        return instance
+
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
     """Serializer for user registration."""
