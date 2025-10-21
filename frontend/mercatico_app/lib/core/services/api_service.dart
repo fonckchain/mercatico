@@ -23,12 +23,22 @@ class ApiService {
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
+          print('🌐 API Request: ${options.method} ${options.uri}');
+          print('📦 Request Data: ${options.data}');
           if (_accessToken != null) {
             options.headers['Authorization'] = 'Bearer $_accessToken';
           }
           return handler.next(options);
         },
+        onResponse: (response, handler) {
+          print('✅ API Response: ${response.statusCode} ${response.requestOptions.uri}');
+          return handler.next(response);
+        },
         onError: (error, handler) async {
+          print('❌ API Error: ${error.response?.statusCode} ${error.requestOptions.uri}');
+          print('📄 Error Response: ${error.response?.data}');
+          print('🔍 Error Message: ${error.message}');
+
           // Manejar errores 401 (no autorizado)
           if (error.response?.statusCode == 401) {
             // TODO: Intentar refrescar el token
