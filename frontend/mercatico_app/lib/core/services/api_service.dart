@@ -132,6 +132,12 @@ class ApiService {
     await _dio.delete(ApiConstants.productDetail(id));
   }
 
+  /// Obtener lista de categorías
+  Future<Map<String, dynamic>> getCategories() async {
+    final response = await _dio.get(ApiConstants.categories);
+    return response.data;
+  }
+
   // ==================== SELLER PROFILE ====================
 
   /// Actualizar perfil del vendedor

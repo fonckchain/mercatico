@@ -22,32 +22,24 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
   late TextEditingController _priceController;
   late TextEditingController _stockController;
 
-  String _selectedCategory = 'Artesanías';
+  String? _selectedCategoryId;
   bool _isActive = true;
   bool _showStock = false;
   bool _isLoading = false;
+  bool _loadingCategories = true;
   String? _errorMessage;
 
-  // Map category names to their UUIDs from backend
-  final Map<String, String> _categoryMap = {
-    'Accesorios': 'd2784ad5-cee0-4f6a-a056-1bab895555f2',
-    'Artesanías': 'c22fc3aa-c023-4b44-92ba-50ff09d040c3',
-    'Comidas Preparadas': '943f0ec2-7c57-41fe-b5a3-ee42bc161936',
-    'Decoración': 'cba78fc2-0500-4071-b03b-3c4ea4dd0df0',
-    'Frutas y Verduras': 'ec0f7f60-5be6-4774-8c2c-a9023792a527',
-    'Joyería': 'ce78bd01-da93-4cf9-a48f-8d0ab08ea481',
-    'Panadería': '71e4b389-7939-4f0f-a883-b2fb5c13f2d0',
-    'Productos Orgánicos': '03e8edcd-cdd4-48f4-a243-109984f1eef5',
-    'Repostería': 'd72b1c5c-a2a2-450e-ab2b-a64e904cf62c',
-    'Ropa': '59d7ced4-29d3-4902-9913-5873bf4508f4',
-  };
+  // Map category IDs to names, loaded dynamically from backend
+  Map<String, String> _categories = {};
 
-  List<String> get _categories => _categoryMap.keys.toList();
+  List<String> get _categoryIds => _categories.keys.toList();
+  List<String> get _categoryNames => _categories.values.toList();
 
   @override
   void initState() {
     super.initState();
-    // Si estamos editando, prellenar los campos
+
+    // Initialize controllers
     _nameController = TextEditingController(text: widget.product?.name ?? '');
     _descriptionController = TextEditingController(text: widget.product?.description ?? '');
     _priceController = TextEditingController(
@@ -57,15 +49,41 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       text: widget.product != null ? widget.product!.stock.toString() : '',
     );
 
+    // Load product data if editing
     if (widget.product != null) {
-      // Validar que la categoría del producto esté en la lista
-      // Si no está, usar la primera categoría disponible
-      final productCategory = widget.product!.category;
-      _selectedCategory = _categories.contains(productCategory)
-          ? productCategory
-          : _categories.first;
+      _selectedCategoryId = widget.product!.category;
       _isActive = widget.product!.isActive;
       _showStock = widget.product!.showStock;
+    }
+
+    // Load categories from backend
+    _loadCategories();
+  }
+
+  Future<void> _loadCategories() async {
+    try {
+      final response = await _apiService.getCategories();
+
+      if (response['results'] != null && response['results'] is List) {
+        setState(() {
+          _categories = {
+            for (var cat in response['results'])
+              cat['id'].toString(): cat['name'].toString()
+          };
+
+          // Set default category if creating new product
+          if (widget.product == null && _categories.isNotEmpty) {
+            _selectedCategoryId = _categories.keys.first;
+          }
+
+          _loadingCategories = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Error al cargar categorías: $e';
+        _loadingCategories = false;
+      });
     }
   }
 
@@ -83,23 +101,29 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       return;
     }
 
+    if (_selectedCategoryId == null) {
+      setState(() {
+        _errorMessage = 'Por favor selecciona una categoría';
+      });
+      return;
+    }
+
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
 
     try {
-      // Get the category UUID from the selected category name
-      final categoryId = _categoryMap[_selectedCategory];
-
       final productData = {
         'name': _nameController.text.trim(),
         'description': _descriptionController.text.trim(),
         'price': double.parse(_priceController.text),
         'stock': int.parse(_stockController.text),
         'show_stock': _showStock,
-        'category': categoryId,  // Send UUID instead of name
-        'is_active': _isActive,
+        'category': _selectedCategoryId,  // Send category UUID
+        'is_available': _isActive,  // Backend expects 'is_available' not 'is_active'
+        'accepts_cash': true,  // Default value
+        'images': [],  // Default empty array
       };
 
       if (widget.product == null) {
@@ -246,25 +270,34 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
               const SizedBox(height: 16),
 
               // Categoría
-              DropdownButtonFormField<String>(
-                value: _selectedCategory,
-                decoration: const InputDecoration(
-                  labelText: 'Categoría',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.category),
+              if (_loadingCategories)
+                const Center(child: CircularProgressIndicator())
+              else
+                DropdownButtonFormField<String>(
+                  value: _selectedCategoryId,
+                  decoration: const InputDecoration(
+                    labelText: 'Categoría',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.category),
+                  ),
+                  items: _categories.entries.map((entry) {
+                    return DropdownMenuItem(
+                      value: entry.key,  // UUID
+                      child: Text(entry.value),  // Name
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedCategoryId = value;
+                    });
+                  },
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Por favor selecciona una categoría';
+                    }
+                    return null;
+                  },
                 ),
-                items: _categories.map((category) {
-                  return DropdownMenuItem(
-                    value: category,
-                    child: Text(category),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  setState(() {
-                    _selectedCategory = value!;
-                  });
-                },
-              ),
               const SizedBox(height: 16),
 
               // Estado activo/inactivo
