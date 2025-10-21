@@ -140,12 +140,18 @@ class ApiService {
 
   // ==================== SELLER PROFILE ====================
 
+  /// Obtener perfil del vendedor actual
+  Future<Map<String, dynamic>> getSellerProfile() async {
+    final response = await _dio.get(ApiConstants.userMe);
+    return response.data['seller_profile'] ?? {};
+  }
+
   /// Actualizar perfil del vendedor
   Future<Map<String, dynamic>> updateSellerProfile(
     Map<String, dynamic> profileData,
   ) async {
     final response = await _dio.patch(
-      '/users/me/',
+      ApiConstants.userMe,
       data: {
         'seller_profile': profileData,
       },
