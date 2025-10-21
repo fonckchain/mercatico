@@ -24,12 +24,7 @@ class UserViewSet(viewsets.ModelViewSet):
     """
     queryset = User.objects.all()
     serializer_class = UserSerializer
-
-    def get_permissions(self):
-        """Set permissions based on action."""
-        if self.action == 'register':
-            return [permissions.AllowAny()]
-        return [permissions.IsAuthenticated()]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         """Filter queryset based on user permissions."""
