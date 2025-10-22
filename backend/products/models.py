@@ -54,7 +54,7 @@ class Product(models.Model):
 
     # Basic information
     name = models.CharField('nombre', max_length=200)
-    description = models.TextField('descripción', max_length=2000)
+    description = models.TextField('descripción', max_length=2000, blank=True)
 
     # Category
     category = models.ForeignKey(

@@ -32,6 +32,7 @@ class ApiService {
         },
         onResponse: (response, handler) {
           print('✅ API Response: ${response.statusCode} ${response.requestOptions.uri}');
+          print('📥 Response Data: ${response.data}');
           return handler.next(response);
         },
         onError: (error, handler) async {
