@@ -93,6 +93,18 @@ class Product(models.Model):
         help_text='Si el vendedor acepta pago en efectivo para este producto'
     )
 
+    # Delivery options
+    offers_pickup = models.BooleanField(
+        'ofrece recogida',
+        default=True,
+        help_text='Si el producto está disponible para recogida en punto físico'
+    )
+    offers_delivery = models.BooleanField(
+        'ofrece entrega',
+        default=False,
+        help_text='Si el producto está disponible para entrega a domicilio'
+    )
+
     # Images (stored as JSON array of URLs)
     images = models.JSONField(
         'imágenes',

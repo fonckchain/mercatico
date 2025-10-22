@@ -27,6 +27,8 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
   String? _selectedCategoryId;
   bool _isActive = true;
   bool _showStock = false;
+  bool _offersPickup = true;
+  bool _offersDelivery = false;
   bool _isLoading = false;
   bool _loadingCategories = true;
   String? _errorMessage;
@@ -76,6 +78,8 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         _stockController.text = productData['stock']?.toString() ?? '';
         _isActive = productData['is_available'] ?? true;
         _showStock = productData['show_stock'] ?? false;
+        _offersPickup = productData['offers_pickup'] ?? true;
+        _offersDelivery = productData['offers_delivery'] ?? false;
 
         // Parse GPS coordinates
         if (productData['latitude'] != null) {
@@ -212,6 +216,8 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         'category': _selectedCategoryId,  // Send category UUID
         'is_available': _isActive,  // Backend expects 'is_available' not 'is_active'
         'accepts_cash': true,  // Default value
+        'offers_pickup': _offersPickup,
+        'offers_delivery': _offersDelivery,
         'images': [],  // Default empty array
       };
 
@@ -501,6 +507,47 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                 onChanged: (value) {
                   setState(() {
                     _showStock = value;
+                  });
+                },
+                activeColor: Colors.green,
+              ),
+
+              const SizedBox(height: 16),
+              const Text(
+                'Opciones de entrega',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 8),
+
+              // Ofrece recogida
+              SwitchListTile(
+                title: const Text('Ofrece recogida'),
+                subtitle: const Text(
+                  'El comprador puede recoger el producto en tu ubicación',
+                ),
+                value: _offersPickup,
+                onChanged: (value) {
+                  setState(() {
+                    _offersPickup = value;
+                  });
+                },
+                activeColor: Colors.green,
+              ),
+
+              // Ofrece entrega
+              SwitchListTile(
+                title: const Text('Ofrece entrega a domicilio'),
+                subtitle: const Text(
+                  'Puedes enviar el producto a la ubicación del comprador',
+                ),
+                value: _offersDelivery,
+                onChanged: (value) {
+                  setState(() {
+                    _offersDelivery = value;
                   });
                 },
                 activeColor: Colors.green,

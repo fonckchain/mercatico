@@ -78,6 +78,8 @@ class ProductSerializer(serializers.ModelSerializer):
             'stock',
             'show_stock',
             'accepts_cash',
+            'offers_pickup',
+            'offers_delivery',
             'is_available',
             'images',
             'latitude',
@@ -149,6 +151,8 @@ class ProductListSerializer(serializers.ModelSerializer):
             'is_available',
             'stock',
             'show_stock',
+            'offers_pickup',
+            'offers_delivery',
         ]
 
     def get_main_image(self, obj):
