@@ -143,6 +143,43 @@ class ApiService {
     await _dio.delete(ApiConstants.productDetail(id));
   }
 
+  /// Subir imágenes a un producto
+  Future<Map<String, dynamic>> uploadProductImages(
+    String productId,
+    List<String> imagePaths,
+  ) async {
+    final formData = FormData();
+
+    // Agregar cada imagen al FormData
+    for (final path in imagePaths) {
+      final fileName = path.split('/').last;
+      formData.files.add(
+        MapEntry(
+          'images',
+          await MultipartFile.fromFile(path, filename: fileName),
+        ),
+      );
+    }
+
+    final response = await _dio.post(
+      '${ApiConstants.productDetail(productId)}/upload_images/',
+      data: formData,
+    );
+    return response.data;
+  }
+
+  /// Eliminar una imagen de un producto
+  Future<Map<String, dynamic>> deleteProductImage(
+    String productId,
+    String imageUrl,
+  ) async {
+    final response = await _dio.delete(
+      '${ApiConstants.productDetail(productId)}/delete_image/',
+      data: {'image_url': imageUrl},
+    );
+    return response.data;
+  }
+
   /// Obtener lista de categorías
   Future<Map<String, dynamic>> getCategories() async {
     final response = await _dio.get(ApiConstants.categories);

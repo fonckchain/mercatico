@@ -1,9 +1,11 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../core/services/api_service.dart';
 import '../../models/product.dart';
 import '../../widgets/location_picker.dart';
+import '../../widgets/image_picker_widget.dart';
 
 class ProductFormScreen extends StatefulWidget {
   final Product? product; // Si es null, es crear; si tiene valor, es editar
@@ -40,6 +42,11 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
   double? _latitude;
   double? _longitude;
   bool _loadingSellerLocation = true;
+
+  // Images
+  List<File> _selectedImageFiles = [];
+  List<String> _existingImageUrls = [];
+  bool _uploadingImages = false;
 
   List<String> get _categoryIds => _categories.keys.toList();
   List<String> get _categoryNames => _categories.values.toList();
@@ -87,6 +94,11 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         }
         if (productData['longitude'] != null) {
           _longitude = double.tryParse(productData['longitude'].toString());
+        }
+
+        // Load existing images
+        if (productData['images'] != null && productData['images'] is List) {
+          _existingImageUrls = List<String>.from(productData['images']);
         }
 
         _loadingSellerLocation = false;
@@ -228,35 +240,55 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         productData['longitude'] = _longitude!.toStringAsFixed(6);
       }
 
+      String productId;
+
       if (widget.product == null) {
         // Crear nuevo producto
-        await _apiService.createProduct(productData);
-        if (mounted) {
-          Navigator.of(context).pop(true); // true indica que se creó exitosamente
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Producto creado exitosamente'),
-              backgroundColor: Colors.green,
-            ),
-          );
-        }
+        final response = await _apiService.createProduct(productData);
+        productId = response['id'];
       } else {
         // Actualizar producto existente
         await _apiService.updateProduct(widget.product!.id, productData);
-        if (mounted) {
-          Navigator.of(context).pop(true);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Producto actualizado exitosamente'),
-              backgroundColor: Colors.green,
-            ),
-          );
+        productId = widget.product!.id;
+      }
+
+      // Subir nuevas imágenes si hay
+      if (_selectedImageFiles.isNotEmpty) {
+        setState(() {
+          _uploadingImages = true;
+        });
+
+        try {
+          final imagePaths = _selectedImageFiles.map((file) => file.path).toList();
+          await _apiService.uploadProductImages(productId, imagePaths);
+        } catch (e) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Advertencia: Error al subir imágenes: $e'),
+                backgroundColor: Colors.orange,
+              ),
+            );
+          }
         }
+      }
+
+      if (mounted) {
+        Navigator.of(context).pop(true);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(widget.product == null
+              ? 'Producto creado exitosamente'
+              : 'Producto actualizado exitosamente'),
+            backgroundColor: Colors.green,
+          ),
+        );
       }
     } catch (e) {
       setState(() {
         _errorMessage = 'Error al guardar producto: $e';
         _isLoading = false;
+        _uploadingImages = false;
       });
     }
   }
@@ -317,6 +349,19 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                   }
                   return null;
                 },
+              ),
+              const SizedBox(height: 16),
+
+              // Selector de imágenes
+              ImagePickerWidget(
+                initialImages: _existingImageUrls,
+                onImagesChanged: (selectedFiles, existingUrls) {
+                  setState(() {
+                    _selectedImageFiles = selectedFiles;
+                    _existingImageUrls = existingUrls;
+                  });
+                },
+                maxImages: 5,
               ),
               const SizedBox(height: 16),
 
@@ -582,7 +627,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
 
               // Botón guardar
               ElevatedButton(
-                onPressed: _isLoading ? null : _saveProduct,
+                onPressed: (_isLoading || _uploadingImages) ? null : _saveProduct,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green,
                   foregroundColor: Colors.white,
@@ -591,14 +636,24 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                child: _isLoading
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
+                child: (_isLoading || _uploadingImages)
+                    ? Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            _uploadingImages ? 'Subiendo imágenes...' : 'Guardando...',
+                            style: const TextStyle(fontSize: 14),
+                          ),
+                        ],
                       )
                     : Text(
                         isEditing ? 'Actualizar Producto' : 'Crear Producto',

@@ -18,6 +18,9 @@ python-decouple==3.8
 # Image handling
 Pillow==10.2.0
 
+# Supabase Storage
+supabase==2.3.4
+
 # Server
 gunicorn==21.2.0
 whitenoise==6.6.0

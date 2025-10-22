@@ -9,7 +9,8 @@ class Product {
   final int stock;
   final bool showStock;
   final bool acceptsCash;
-  final String? imageUrl;
+  final String? imageUrl; // URL de la imagen principal (para compatibilidad)
+  final List<String> images; // Lista completa de URLs de imágenes
   final String category;
   final String sellerId;
   final String sellerName;
@@ -28,6 +29,7 @@ class Product {
     this.showStock = false,
     this.acceptsCash = true,
     this.imageUrl,
+    this.images = const [],
     required this.category,
     required this.sellerId,
     required this.sellerName,
@@ -49,6 +51,20 @@ class Product {
       return 0.0;
     }
 
+    // Parsear lista de imágenes
+    List<String> imagesList = [];
+    if (json['images'] != null && json['images'] is List) {
+      imagesList = List<String>.from(json['images']);
+    }
+
+    // Para compatibilidad, usar main_image o la primera de la lista
+    String? mainImageUrl;
+    if (json['main_image'] != null) {
+      mainImageUrl = json['main_image'];
+    } else if (imagesList.isNotEmpty) {
+      mainImageUrl = imagesList.first;
+    }
+
     return Product(
       id: json['id'] ?? '',
       name: json['name'] ?? '',
@@ -57,7 +73,8 @@ class Product {
       stock: json['stock'] ?? 0,
       showStock: json['show_stock'] ?? false,
       acceptsCash: json['accepts_cash'] ?? true,
-      imageUrl: json['image_url'],
+      imageUrl: mainImageUrl,
+      images: imagesList,
       category: json['category'] ?? '',
       sellerId: json['seller'] ?? '',
       sellerName: json['seller_name'] ?? 'Vendedor',

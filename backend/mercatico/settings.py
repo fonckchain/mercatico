@@ -121,6 +121,10 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
+# Storage backend - usar Supabase Storage en producción
+if not DEBUG and SUPABASE_URL and SUPABASE_KEY:
+    DEFAULT_FILE_STORAGE = 'products.storage_backends.SupabaseStorage'
+
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -202,6 +206,7 @@ DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@mercatico.cr'
 SUPABASE_URL = config('SUPABASE_URL', default='')
 SUPABASE_KEY = config('SUPABASE_KEY', default='')
 SUPABASE_SERVICE_KEY = config('SUPABASE_SERVICE_KEY', default='')
+SUPABASE_BUCKET_NAME = config('SUPABASE_BUCKET_NAME', default='Productos')
 
 # Grok API Settings (xAI)
 GROK_API_KEY = config('GROK_API_KEY', default='')
