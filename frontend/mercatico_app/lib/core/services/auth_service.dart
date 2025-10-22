@@ -52,6 +52,8 @@ class AuthService {
     String? businessName,
     String? businessDescription,
     String? sinpeNumber,
+    double? latitude,
+    double? longitude,
   }) async {
     try {
       final userData = {
@@ -64,6 +66,10 @@ class AuthService {
         'user_type': role, // Backend expects 'user_type' not 'role'
         if (businessName != null) 'business_name': businessName,
         if (sinpeNumber != null) 'sinpe_number': sinpeNumber,
+        if (latitude != null && longitude != null) ...{
+          'latitude': latitude.toStringAsFixed(6),
+          'longitude': longitude.toStringAsFixed(6),
+        },
       };
 
       final response = await _apiService.register(userData);

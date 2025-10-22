@@ -16,6 +16,8 @@ class BuyerProfileSerializer(serializers.ModelSerializer):
             'canton',
             'district',
             'address',
+            'latitude',
+            'longitude',
             'created_at',
             'updated_at',
         ]
@@ -133,6 +135,20 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     business_name = serializers.CharField(required=False, allow_blank=True)
     sinpe_number = serializers.CharField(required=False, allow_blank=True)
 
+    # GPS coordinates (for both buyers and sellers)
+    latitude = serializers.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        required=False,
+        allow_null=True
+    )
+    longitude = serializers.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        required=False,
+        allow_null=True
+    )
+
     class Meta:
         model = User
         fields = [
@@ -145,6 +161,8 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             'user_type',
             'business_name',
             'sinpe_number',
+            'latitude',
+            'longitude',
         ]
 
     def validate(self, attrs):
@@ -172,19 +190,27 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         validated_data.pop('password_confirm')
         business_name = validated_data.pop('business_name', None)
         sinpe_number = validated_data.pop('sinpe_number', None)
+        latitude = validated_data.pop('latitude', None)
+        longitude = validated_data.pop('longitude', None)
 
         # Create user
         user = User.objects.create_user(**validated_data)
 
-        # Create appropriate profile
+        # Create appropriate profile with GPS coordinates
         if user.user_type == User.UserType.SELLER:
             SellerProfile.objects.create(
                 user=user,
                 business_name=business_name,
-                sinpe_number=sinpe_number
+                sinpe_number=sinpe_number,
+                latitude=latitude,
+                longitude=longitude
             )
         else:
-            BuyerProfile.objects.create(user=user)
+            BuyerProfile.objects.create(
+                user=user,
+                latitude=latitude,
+                longitude=longitude
+            )
 
         return user
 

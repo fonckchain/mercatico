@@ -263,6 +263,24 @@ class BuyerProfile(models.Model):
     district = models.CharField('distrito', max_length=50, blank=True)
     address = models.TextField('dirección de entrega', blank=True)
 
+    # GPS coordinates (default delivery location)
+    latitude = models.DecimalField(
+        'latitud',
+        max_digits=9,
+        decimal_places=6,
+        null=True,
+        blank=True,
+        help_text='Coordenada de latitud GPS para ubicación de entrega'
+    )
+    longitude = models.DecimalField(
+        'longitud',
+        max_digits=9,
+        decimal_places=6,
+        null=True,
+        blank=True,
+        help_text='Coordenada de longitud GPS para ubicación de entrega'
+    )
+
     # Timestamps
     created_at = models.DateTimeField('fecha de creación', auto_now_add=True)
     updated_at = models.DateTimeField('última actualización', auto_now=True)
