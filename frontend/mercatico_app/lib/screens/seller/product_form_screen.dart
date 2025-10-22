@@ -68,17 +68,23 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     try {
       // Load full product details from API to get description and all fields
       final productData = await _apiService.getProduct(widget.product!.id);
-      final fullProduct = Product.fromJson(productData);
 
       setState(() {
-        _nameController.text = fullProduct.name;
-        _descriptionController.text = fullProduct.description;
-        _priceController.text = fullProduct.price.toString();
-        _stockController.text = fullProduct.stock.toString();
-        _isActive = fullProduct.isActive;
-        _showStock = fullProduct.showStock;
-        _latitude = fullProduct.latitude;
-        _longitude = fullProduct.longitude;
+        _nameController.text = productData['name'] ?? '';
+        _descriptionController.text = productData['description'] ?? '';
+        _priceController.text = productData['price']?.toString() ?? '';
+        _stockController.text = productData['stock']?.toString() ?? '';
+        _isActive = productData['is_available'] ?? true;
+        _showStock = productData['show_stock'] ?? false;
+
+        // Parse GPS coordinates
+        if (productData['latitude'] != null) {
+          _latitude = double.tryParse(productData['latitude'].toString());
+        }
+        if (productData['longitude'] != null) {
+          _longitude = double.tryParse(productData['longitude'].toString());
+        }
+
         _loadingSellerLocation = false;
 
         // Category will be set after categories are loaded in _loadCategories
