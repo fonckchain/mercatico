@@ -46,31 +46,49 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
   void initState() {
     super.initState();
 
-    // Initialize controllers
-    _nameController = TextEditingController(text: widget.product?.name ?? '');
-    _descriptionController = TextEditingController(text: widget.product?.description ?? '');
-    _priceController = TextEditingController(
-      text: widget.product != null ? widget.product!.price.toString() : '',
-    );
-    _stockController = TextEditingController(
-      text: widget.product != null ? widget.product!.stock.toString() : '',
-    );
+    // Initialize controllers (will be populated when loading product details)
+    _nameController = TextEditingController();
+    _descriptionController = TextEditingController();
+    _priceController = TextEditingController();
+    _stockController = TextEditingController();
 
-    // Load other product data if editing (but NOT category yet)
+    // Load categories from backend (will set category after loading)
+    _loadCategories();
+
+    // If editing, load full product details
     if (widget.product != null) {
-      _isActive = widget.product!.isActive;
-      _showStock = widget.product!.showStock;
-      // Load product location if available
-      _latitude = widget.product!.latitude;
-      _longitude = widget.product!.longitude;
-      _loadingSellerLocation = false;
+      _loadProductDetails();
     } else {
       // If creating new product, load seller's default location
       _loadSellerLocation();
     }
+  }
 
-    // Load categories from backend (will set category after loading)
-    _loadCategories();
+  Future<void> _loadProductDetails() async {
+    try {
+      // Load full product details from API to get description and all fields
+      final productData = await _apiService.getProduct(widget.product!.id);
+      final fullProduct = Product.fromJson(productData);
+
+      setState(() {
+        _nameController.text = fullProduct.name;
+        _descriptionController.text = fullProduct.description;
+        _priceController.text = fullProduct.price.toString();
+        _stockController.text = fullProduct.stock.toString();
+        _isActive = fullProduct.isActive;
+        _showStock = fullProduct.showStock;
+        _latitude = fullProduct.latitude;
+        _longitude = fullProduct.longitude;
+        _loadingSellerLocation = false;
+
+        // Category will be set after categories are loaded in _loadCategories
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Error al cargar detalles del producto: $e';
+        _loadingSellerLocation = false;
+      });
+    }
   }
 
   Future<void> _loadCategories() async {
