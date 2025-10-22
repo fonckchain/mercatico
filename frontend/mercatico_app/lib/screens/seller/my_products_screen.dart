@@ -43,7 +43,13 @@ class _MyProductsScreenState extends State<MyProductsScreen> {
       if (response['results'] != null) {
         setState(() {
           _myProducts = (response['results'] as List)
-              .map((json) => Product.fromJson(json))
+              .map((json) {
+                final product = Product.fromJson(json);
+                print('DEBUG Product: ${product.name}');
+                print('  - imageUrl: ${product.imageUrl}');
+                print('  - images: ${product.images}');
+                return product;
+              })
               .toList();
           _isLoading = false;
         });

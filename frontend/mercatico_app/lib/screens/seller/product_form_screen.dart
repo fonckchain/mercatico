@@ -99,6 +99,11 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         // Load existing images
         if (productData['images'] != null && productData['images'] is List) {
           _existingImageUrls = List<String>.from(productData['images']);
+          print('DEBUG: Loaded ${_existingImageUrls.length} existing images');
+          print('DEBUG: Images: $_existingImageUrls');
+        } else {
+          print('DEBUG: No images found in product data');
+          print('DEBUG: productData[images] = ${productData['images']}');
         }
 
         _loadingSellerLocation = false;
