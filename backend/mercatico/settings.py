@@ -125,6 +125,13 @@ MEDIA_ROOT = BASE_DIR / 'media'
 if not DEBUG and SUPABASE_URL and SUPABASE_KEY:
     DEFAULT_FILE_STORAGE = 'products.storage_backends.SupabaseStorage'
 
+# Security settings for production (Railway)
+if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SECURE_SSL_REDIRECT = False  # Railway maneja SSL
+    USE_X_FORWARDED_HOST = True
+    USE_X_FORWARDED_PORT = True
+
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
