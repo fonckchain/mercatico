@@ -20,8 +20,10 @@ class SupabaseStorage(Storage):
 
     def __init__(self):
         self.supabase_url = settings.SUPABASE_URL
-        self.supabase_key = settings.SUPABASE_KEY
+        # Usar service key para permisos completos, fallback a key normal
+        self.supabase_key = getattr(settings, 'SUPABASE_SERVICE_KEY', None) or settings.SUPABASE_KEY
         self.bucket_name = getattr(settings, 'SUPABASE_BUCKET_NAME', 'products')
+        print(f"🔑 Using Supabase key: {'service_role' if settings.SUPABASE_SERVICE_KEY else 'anon'}")
         self.client: Client = create_client(self.supabase_url, self.supabase_key)
 
     def _save(self, name, content):
