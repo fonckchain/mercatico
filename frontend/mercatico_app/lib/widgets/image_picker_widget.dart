@@ -28,6 +28,8 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
   void initState() {
     super.initState();
     _existingImages = List.from(widget.initialImages);
+    print('🖼️ ImagePickerWidget initialized with ${_existingImages.length} existing images');
+    print('🖼️ Images: $_existingImages');
   }
 
   int get _totalImages => _selectedFiles.length + _existingImages.length;

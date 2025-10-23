@@ -36,11 +36,16 @@ class SupabaseStorage(Storage):
         file_content = content.read()
 
         # Subir a Supabase Storage
-        response = self.client.storage.from_(self.bucket_name).upload(
-            path=name,
-            file=file_content,
-            file_options={"content-type": content.content_type if hasattr(content, 'content_type') else "application/octet-stream"}
-        )
+        try:
+            response = self.client.storage.from_(self.bucket_name).upload(
+                path=name,
+                file=file_content,
+                file_options={"content-type": content.content_type if hasattr(content, 'content_type') else "application/octet-stream"}
+            )
+            print(f"✅ Uploaded to Supabase: {name}")
+        except Exception as e:
+            print(f"❌ Error uploading to Supabase: {e}")
+            raise
 
         return name
 
