@@ -156,6 +156,7 @@ class ProductListSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source='category.name', read_only=True)
     seller_name = serializers.CharField(source='seller.seller_profile.business_name', read_only=True)
     main_image = serializers.SerializerMethodField()
+    images = serializers.SerializerMethodField()
     seller_rating = serializers.DecimalField(
         source='seller.seller_profile.rating_avg',
         max_digits=3,
@@ -170,6 +171,7 @@ class ProductListSerializer(serializers.ModelSerializer):
             'name',
             'price',
             'main_image',
+            'images',
             'category_name',
             'seller_name',
             'seller_rating',
@@ -188,6 +190,28 @@ class ProductListSerializer(serializers.ModelSerializer):
             if request:
                 return request.build_absolute_uri(main_image)
         return main_image
+
+    def get_images(self, obj):
+        """Get all image URLs, converting relative to absolute."""
+        if not obj.images:
+            return []
+
+        request = self.context.get('request')
+        absolute_images = []
+
+        for img_url in obj.images:
+            if img_url and not img_url.startswith('http'):
+                # URL relativa, convertir a absoluta
+                if request:
+                    absolute_url = request.build_absolute_uri(img_url)
+                    absolute_images.append(absolute_url)
+                else:
+                    absolute_images.append(img_url)
+            else:
+                # Ya es absoluta
+                absolute_images.append(img_url)
+
+        return absolute_images
 
 
 class ProductDetailSerializer(ProductSerializer):

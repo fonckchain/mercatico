@@ -212,11 +212,16 @@ SUPABASE_SERVICE_KEY = config('SUPABASE_SERVICE_KEY', default='')
 SUPABASE_BUCKET_NAME = config('SUPABASE_BUCKET_NAME', default='Productos')
 
 # Storage backend - usar Supabase Storage en producción
+print(f"🔍 DEBUG={DEBUG}")
+print(f"🔍 SUPABASE_URL={'[SET]' if SUPABASE_URL else '[NOT SET]'}")
+print(f"🔍 SUPABASE_KEY={'[SET]' if SUPABASE_KEY else '[NOT SET]'}")
+print(f"🔍 SUPABASE_BUCKET_NAME={SUPABASE_BUCKET_NAME}")
+
 if not DEBUG and SUPABASE_URL and SUPABASE_KEY:
     DEFAULT_FILE_STORAGE = 'products.storage_backends.SupabaseStorage'
-    print(f"✅ Using SupabaseStorage with bucket: {SUPABASE_BUCKET_NAME}")
+    print(f"✅ STORAGE: Using SupabaseStorage with bucket: {SUPABASE_BUCKET_NAME}")
 else:
-    print(f"⚠️  Using FileSystemStorage (DEBUG={DEBUG}, SUPABASE_URL={'set' if SUPABASE_URL else 'not set'})")
+    print(f"⚠️  STORAGE: Using FileSystemStorage (DEBUG={DEBUG}, has_url={bool(SUPABASE_URL)}, has_key={bool(SUPABASE_KEY)})")
 
 # Grok API Settings (xAI)
 GROK_API_KEY = config('GROK_API_KEY', default='')
