@@ -124,6 +124,31 @@ class ProductSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Máximo 5 imágenes permitidas.")
         return value
 
+    def to_representation(self, instance):
+        """Convert relative image URLs to absolute URLs."""
+        data = super().to_representation(instance)
+        request = self.context.get('request')
+
+        if request and data.get('images'):
+            # Convert relative URLs to absolute
+            absolute_images = []
+            for img_url in data['images']:
+                if img_url and not img_url.startswith('http'):
+                    # URL relativa, convertir a absoluta
+                    absolute_url = request.build_absolute_uri(img_url)
+                    absolute_images.append(absolute_url)
+                else:
+                    # Ya es absoluta
+                    absolute_images.append(img_url)
+            data['images'] = absolute_images
+
+        # También convertir main_image si existe
+        if request and data.get('main_image'):
+            if not data['main_image'].startswith('http'):
+                data['main_image'] = request.build_absolute_uri(data['main_image'])
+
+        return data
+
 
 class ProductListSerializer(serializers.ModelSerializer):
     """Simplified serializer for product listings."""
@@ -157,7 +182,12 @@ class ProductListSerializer(serializers.ModelSerializer):
 
     def get_main_image(self, obj):
         """Get the main image URL."""
-        return obj.get_main_image()
+        main_image = obj.get_main_image()
+        if main_image and not main_image.startswith('http'):
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(main_image)
+        return main_image
 
 
 class ProductDetailSerializer(ProductSerializer):
