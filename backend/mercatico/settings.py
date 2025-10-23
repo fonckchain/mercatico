@@ -121,10 +121,6 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-# Storage backend - usar Supabase Storage en producción
-if not DEBUG and SUPABASE_URL and SUPABASE_KEY:
-    DEFAULT_FILE_STORAGE = 'products.storage_backends.SupabaseStorage'
-
 # Security settings for production (Railway)
 if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
@@ -214,6 +210,13 @@ SUPABASE_URL = config('SUPABASE_URL', default='')
 SUPABASE_KEY = config('SUPABASE_KEY', default='')
 SUPABASE_SERVICE_KEY = config('SUPABASE_SERVICE_KEY', default='')
 SUPABASE_BUCKET_NAME = config('SUPABASE_BUCKET_NAME', default='Productos')
+
+# Storage backend - usar Supabase Storage en producción
+if not DEBUG and SUPABASE_URL and SUPABASE_KEY:
+    DEFAULT_FILE_STORAGE = 'products.storage_backends.SupabaseStorage'
+    print(f"✅ Using SupabaseStorage with bucket: {SUPABASE_BUCKET_NAME}")
+else:
+    print(f"⚠️  Using FileSystemStorage (DEBUG={DEBUG}, SUPABASE_URL={'set' if SUPABASE_URL else 'not set'})")
 
 # Grok API Settings (xAI)
 GROK_API_KEY = config('GROK_API_KEY', default='')
