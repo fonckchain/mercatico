@@ -290,18 +290,30 @@ class _ProductListItem extends StatelessWidget {
             color: Colors.grey[200],
             borderRadius: BorderRadius.circular(8),
           ),
-          child: product.imageUrl != null
+          child: product.imageUrl != null && product.imageUrl!.isNotEmpty
               ? ClipRRect(
                   borderRadius: BorderRadius.circular(8),
                   child: Image.network(
                     product.imageUrl!,
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) {
-                      return const Icon(Icons.image_not_supported);
+                      print('❌ Error loading image: ${product.imageUrl}');
+                      print('   Error: $error');
+                      return const Icon(Icons.image_not_supported, color: Colors.red);
+                    },
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return const Center(
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      );
                     },
                   ),
                 )
-              : const Icon(Icons.shopping_bag, size: 30),
+              : const Icon(Icons.shopping_bag, size: 30, color: Colors.grey),
         ),
         title: Text(
           product.name,
