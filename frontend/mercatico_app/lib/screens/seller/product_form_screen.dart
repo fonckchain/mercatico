@@ -238,7 +238,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         'accepts_cash': true,  // Default value
         'offers_pickup': _offersPickup,
         'offers_delivery': _offersDelivery,
-        'images': [],  // Default empty array
+        'images': _existingImageUrls,  // Mantener imágenes existentes
       };
 
       // Only include GPS coordinates if they are not null
