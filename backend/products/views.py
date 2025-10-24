@@ -99,6 +99,43 @@ class ProductViewSet(viewsets.ModelViewSet):
         if product.seller != self.request.user:
             from rest_framework.exceptions import PermissionDenied
             raise PermissionDenied("No puedes editar productos de otros vendedores")
+
+        # Detectar imágenes eliminadas y borrarlas de Supabase Storage
+        old_images = set(product.images or [])
+        new_images = set(serializer.validated_data.get('images', []))
+        deleted_images = old_images - new_images
+
+        if deleted_images:
+            from django.core.files.storage import default_storage
+            print(f"🗑️  Deleting {len(deleted_images)} images from storage")
+
+            for image_url in deleted_images:
+                try:
+                    # Extraer el path del archivo de la URL
+                    # URLs de Supabase tienen formato: https://.../storage/v1/object/public/Products/path/to/file.jpg
+                    if 'supabase.co/storage/v1/object/public/' in image_url:
+                        # Extraer path después del nombre del bucket
+                        path_parts = image_url.split('/object/public/')
+                        if len(path_parts) > 1:
+                            # Remover el bucket name y quedarnos con el path del archivo
+                            full_path = path_parts[1]
+                            # Remover el nombre del bucket (primer segmento)
+                            file_path = '/'.join(full_path.split('/')[1:])
+                            # Remover query params si los hay
+                            file_path = file_path.split('?')[0]
+
+                            print(f"🗑️  Deleting from storage: {file_path}")
+                            default_storage.delete(file_path)
+                            print(f"✅ Deleted: {file_path}")
+                    elif image_url.startswith('/media/'):
+                        # URL local del filesystem
+                        file_path = image_url.replace('/media/', '')
+                        print(f"🗑️  Deleting from storage: {file_path}")
+                        default_storage.delete(file_path)
+                        print(f"✅ Deleted: {file_path}")
+                except Exception as e:
+                    print(f"⚠️  Error deleting image {image_url}: {e}")
+
         serializer.save()
 
     def perform_destroy(self, instance):
@@ -106,6 +143,33 @@ class ProductViewSet(viewsets.ModelViewSet):
         if instance.seller != self.request.user:
             from rest_framework.exceptions import PermissionDenied
             raise PermissionDenied("No puedes eliminar productos de otros vendedores")
+
+        # Eliminar todas las imágenes del storage antes de borrar el producto
+        if instance.images:
+            from django.core.files.storage import default_storage
+            print(f"🗑️  Deleting {len(instance.images)} images from storage (product deletion)")
+
+            for image_url in instance.images:
+                try:
+                    # Extraer el path del archivo de la URL
+                    if 'supabase.co/storage/v1/object/public/' in image_url:
+                        path_parts = image_url.split('/object/public/')
+                        if len(path_parts) > 1:
+                            full_path = path_parts[1]
+                            file_path = '/'.join(full_path.split('/')[1:])
+                            file_path = file_path.split('?')[0]
+
+                            print(f"🗑️  Deleting from storage: {file_path}")
+                            default_storage.delete(file_path)
+                            print(f"✅ Deleted: {file_path}")
+                    elif image_url.startswith('/media/'):
+                        file_path = image_url.replace('/media/', '')
+                        print(f"🗑️  Deleting from storage: {file_path}")
+                        default_storage.delete(file_path)
+                        print(f"✅ Deleted: {file_path}")
+                except Exception as e:
+                    print(f"⚠️  Error deleting image {image_url}: {e}")
+
         instance.delete()
 
     def retrieve(self, request, *args, **kwargs):
@@ -250,35 +314,31 @@ class ProductViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_404_NOT_FOUND
             )
 
+        # Delete file from storage first
+        try:
+            from django.core.files.storage import default_storage
+
+            # Extract path from URL
+            if 'supabase.co/storage/v1/object/public/' in image_url:
+                path_parts = image_url.split('/object/public/')
+                if len(path_parts) > 1:
+                    full_path = path_parts[1]
+                    file_path = '/'.join(full_path.split('/')[1:])
+                    file_path = file_path.split('?')[0]
+                    print(f"🗑️  Deleting from storage: {file_path}")
+                    default_storage.delete(file_path)
+                    print(f"✅ Deleted: {file_path}")
+            elif image_url.startswith('/media/'):
+                file_path = image_url.replace('/media/', '')
+                print(f"🗑️  Deleting from storage: {file_path}")
+                default_storage.delete(file_path)
+                print(f"✅ Deleted: {file_path}")
+        except Exception as e:
+            print(f"⚠️  Error deleting file from storage: {e}")
+
         # Remove image URL from list
         product.images.remove(image_url)
         product.save()
-
-        # Delete file from storage
-        try:
-            from django.core.files.storage import default_storage
-            from django.conf import settings
-            from urllib.parse import urlparse
-
-            # Extract path from URL
-            if settings.SUPABASE_URL and image_url.startswith(settings.SUPABASE_URL):
-                # Supabase URL: extraer path del bucket
-                parsed = urlparse(image_url)
-                # URL format: /storage/v1/object/public/{bucket}/{path}
-                path_parts = parsed.path.split(f'/{settings.SUPABASE_BUCKET_NAME}/')
-                if len(path_parts) > 1:
-                    path = path_parts[1]
-                else:
-                    path = parsed.path.split('/')[-1]
-            else:
-                # FileSystemStorage URL local
-                path = image_url.replace(request.build_absolute_uri(settings.MEDIA_URL), '')
-
-            if default_storage.exists(path):
-                default_storage.delete(path)
-        except Exception as e:
-            print(f"Error deleting file from storage: {e}")
-            pass  # Continue even if file deletion fails
 
         serializer = ProductSerializer(product)
         return Response(serializer.data)
