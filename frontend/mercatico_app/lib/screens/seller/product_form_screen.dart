@@ -77,6 +77,9 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     try {
       // Load full product details from API to get description and all fields
       final productData = await _apiService.getProduct(widget.product!.id);
+      print('🔍 PRODUCT DATA RECEIVED: $productData');
+      print('🔍 IMAGES FIELD TYPE: ${productData['images'].runtimeType}');
+      print('🔍 IMAGES FIELD VALUE: ${productData['images']}');
 
       setState(() {
         _nameController.text = productData['name'] ?? '';
