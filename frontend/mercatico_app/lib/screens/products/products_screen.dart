@@ -5,6 +5,7 @@ import '../../core/services/cart_service.dart';
 import '../../models/product.dart';
 import '../buyer/product_detail_screen.dart';
 import '../buyer/cart_screen.dart';
+import '../buyer/buyer_profile_screen.dart';
 
 class ProductsScreen extends StatefulWidget {
   const ProductsScreen({super.key});
@@ -92,7 +93,20 @@ class _ProductsScreenState extends State<ProductsScreen> {
             },
           ),
           IconButton(
+            icon: const Icon(Icons.person),
+            tooltip: 'Mi Perfil',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const BuyerProfileScreen(),
+                ),
+              );
+            },
+          ),
+          IconButton(
             icon: const Icon(Icons.logout),
+            tooltip: 'Cerrar sesión',
             onPressed: () async {
               await _authService.logout();
               if (context.mounted) {
