@@ -4,6 +4,7 @@ import '../../core/services/cart_service.dart';
 import '../../core/services/api_service.dart';
 import '../../models/cart_item.dart';
 import '../../widgets/location_picker.dart';
+import 'checkout_screen.dart';
 
 class CartScreen extends StatefulWidget {
   const CartScreen({super.key});
@@ -373,13 +374,32 @@ class _CartScreenState extends State<CartScreen> {
                     );
                     return;
                   }
-                  // TODO: Navigate to checkout with delivery method
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        _deliveryMethod == 'pickup'
-                            ? 'Proceder con recogida en tienda'
-                            : 'Proceder con entrega a: ${_addressController.text}',
+
+                  if (_deliveryMethod == 'delivery' &&
+                      (_deliveryLatitude == null || _deliveryLongitude == null)) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                            'Por favor selecciona la ubicación de entrega en el mapa'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                    return;
+                  }
+
+                  // Navigate to checkout
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => CheckoutScreen(
+                        deliveryMethod: _deliveryMethod,
+                        deliveryAddress: _deliveryMethod == 'delivery' ? _addressController.text : null,
+                        deliveryLatitude: _deliveryMethod == 'delivery' ? _deliveryLatitude : null,
+                        deliveryLongitude: _deliveryMethod == 'delivery' ? _deliveryLongitude : null,
+                        pickupAddress: _deliveryMethod == 'pickup' ? _sellerAddress : null,
+                        pickupLatitude: _deliveryMethod == 'pickup' ? _pickupLatitude : null,
+                        pickupLongitude: _deliveryMethod == 'pickup' ? _pickupLongitude : null,
+                        sellerBusinessName: _sellerBusinessName,
                       ),
                     ),
                   );
