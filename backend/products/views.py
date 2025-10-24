@@ -210,9 +210,11 @@ class ProductViewSet(viewsets.ModelViewSet):
             if hasattr(default_storage, 'url'):
                 # Supabase Storage o custom backend con método url()
                 url = default_storage.url(path)
+                print(f"📸 Supabase URL generated: {url}")
             else:
                 # FileSystemStorage - usar URL relativa
                 url = request.build_absolute_uri(settings.MEDIA_URL + path)
+                print(f"📸 FileSystem URL generated: {url}")
 
             new_image_urls.append(url)
 
