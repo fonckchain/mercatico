@@ -20,9 +20,6 @@ class _BuyerProfileScreenState extends State<BuyerProfileScreen> {
   late TextEditingController _firstNameController;
   late TextEditingController _lastNameController;
   late TextEditingController _phoneController;
-  late TextEditingController _provinceController;
-  late TextEditingController _cantonController;
-  late TextEditingController _districtController;
   late TextEditingController _addressController;
 
   // GPS location
@@ -40,9 +37,6 @@ class _BuyerProfileScreenState extends State<BuyerProfileScreen> {
     _firstNameController = TextEditingController();
     _lastNameController = TextEditingController();
     _phoneController = TextEditingController();
-    _provinceController = TextEditingController();
-    _cantonController = TextEditingController();
-    _districtController = TextEditingController();
     _addressController = TextEditingController();
     _loadUserProfile();
   }
@@ -52,9 +46,6 @@ class _BuyerProfileScreenState extends State<BuyerProfileScreen> {
     _firstNameController.dispose();
     _lastNameController.dispose();
     _phoneController.dispose();
-    _provinceController.dispose();
-    _cantonController.dispose();
-    _districtController.dispose();
     _addressController.dispose();
     super.dispose();
   }
@@ -72,9 +63,6 @@ class _BuyerProfileScreenState extends State<BuyerProfileScreen> {
         // Load buyer profile data
         final buyerProfile = userData['buyer_profile'];
         if (buyerProfile != null) {
-          _provinceController.text = buyerProfile['province'] ?? '';
-          _cantonController.text = buyerProfile['canton'] ?? '';
-          _districtController.text = buyerProfile['district'] ?? '';
           _addressController.text = buyerProfile['address'] ?? '';
 
           if (buyerProfile['latitude'] != null) {
@@ -107,9 +95,6 @@ class _BuyerProfileScreenState extends State<BuyerProfileScreen> {
 
     try {
       final buyerProfile = <String, dynamic>{
-        'province': _provinceController.text.trim(),
-        'canton': _cantonController.text.trim(),
-        'district': _districtController.text.trim(),
         'address': _addressController.text.trim(),
       };
 
@@ -323,36 +308,6 @@ class _BuyerProfileScreenState extends State<BuyerProfileScreen> {
                           child: Icon(Icons.info_outline, size: 20),
                         ),
                       ],
-                    ),
-                    const SizedBox(height: 16),
-
-                    TextFormField(
-                      controller: _provinceController,
-                      decoration: const InputDecoration(
-                        labelText: 'Provincia',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.location_city),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    TextFormField(
-                      controller: _cantonController,
-                      decoration: const InputDecoration(
-                        labelText: 'Cantón',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.location_on),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    TextFormField(
-                      controller: _districtController,
-                      decoration: const InputDecoration(
-                        labelText: 'Distrito',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.place),
-                      ),
                     ),
                     const SizedBox(height: 16),
 
