@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../core/services/cart_service.dart';
+import '../../core/services/api_service.dart';
 import '../../models/cart_item.dart';
+import '../../widgets/location_picker.dart';
 
 class CartScreen extends StatefulWidget {
   const CartScreen({super.key});
@@ -11,13 +14,104 @@ class CartScreen extends StatefulWidget {
 
 class _CartScreenState extends State<CartScreen> {
   final CartService _cartService = CartService();
+  final ApiService _apiService = ApiService();
   String _deliveryMethod = 'pickup'; // 'pickup' o 'delivery'
   final TextEditingController _addressController = TextEditingController();
+
+  // Buyer delivery location
+  double? _deliveryLatitude;
+  double? _deliveryLongitude;
+
+  // Seller pickup location (from first item in cart)
+  String? _sellerBusinessName;
+  String? _sellerAddress;
+  double? _pickupLatitude;
+  double? _pickupLongitude;
+
+  bool _isLoadingLocations = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadLocations();
+  }
 
   @override
   void dispose() {
     _addressController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadLocations() async {
+    try {
+      // Load buyer's profile for delivery location
+      final userData = await _apiService.getCurrentUser();
+      final buyerProfile = userData['buyer_profile'];
+
+      if (buyerProfile != null) {
+        _addressController.text = buyerProfile['address'] ?? '';
+        if (buyerProfile['latitude'] != null) {
+          _deliveryLatitude = double.tryParse(buyerProfile['latitude'].toString());
+        }
+        if (buyerProfile['longitude'] != null) {
+          _deliveryLongitude = double.tryParse(buyerProfile['longitude'].toString());
+        }
+      }
+
+      // Load seller's pickup location from first cart item
+      if (_cartService.items.isNotEmpty) {
+        final firstProduct = _cartService.items.first.product;
+        final sellerId = firstProduct.sellerId;
+
+        if (sellerId != null) {
+          final sellerData = await _apiService.getProduct(firstProduct.id);
+          final sellerInfo = sellerData['seller_info'];
+
+          if (sellerInfo != null) {
+            _sellerBusinessName = sellerInfo['business_name'];
+            _sellerAddress = sellerInfo['address'];
+            if (sellerInfo['latitude'] != null) {
+              _pickupLatitude = double.tryParse(sellerInfo['latitude'].toString());
+            }
+            if (sellerInfo['longitude'] != null) {
+              _pickupLongitude = double.tryParse(sellerInfo['longitude'].toString());
+            }
+          }
+        }
+      }
+
+      setState(() {
+        _isLoadingLocations = false;
+      });
+    } catch (e) {
+      print('Error loading locations: $e');
+      setState(() {
+        _isLoadingLocations = false;
+      });
+    }
+  }
+
+  Future<void> _pickDeliveryLocation() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => LocationPicker(
+          initialLocation: _deliveryLatitude != null && _deliveryLongitude != null
+              ? LatLng(_deliveryLatitude!, _deliveryLongitude!)
+              : null,
+          onLocationSelected: (location, address) {
+            setState(() {
+              _deliveryLatitude = location.latitude;
+              _deliveryLongitude = location.longitude;
+              if (_addressController.text.isEmpty) {
+                _addressController.text = address;
+              }
+            });
+            Navigator.pop(context);
+          },
+        ),
+      ),
+    );
   }
 
   @override
@@ -162,6 +256,56 @@ class _CartScreenState extends State<CartScreen> {
               ],
             ),
 
+            // Pickup Location Info
+            if (_deliveryMethod == 'pickup' && !_isLoadingLocations) ...[
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade50,
+                  border: Border.all(color: Colors.green.shade200),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.store, color: Colors.green.shade700, size: 20),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Lugar de recogida:',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green.shade700,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    if (_sellerBusinessName != null)
+                      Text(
+                        _sellerBusinessName!,
+                        style: const TextStyle(fontWeight: FontWeight.w500),
+                      ),
+                    if (_sellerAddress != null && _sellerAddress!.isNotEmpty)
+                      Text(
+                        _sellerAddress!,
+                        style: TextStyle(color: Colors.grey.shade700),
+                      ),
+                    if (_pickupLatitude != null && _pickupLongitude != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(
+                          'GPS: ${_pickupLatitude!.toStringAsFixed(6)}, ${_pickupLongitude!.toStringAsFixed(6)}',
+                          style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+
             // Delivery Address Field (if delivery selected)
             if (_deliveryMethod == 'delivery') ...[
               const SizedBox(height: 8),
@@ -175,6 +319,19 @@ class _CartScreenState extends State<CartScreen> {
                   isDense: true,
                 ),
                 maxLines: 2,
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: _pickDeliveryLocation,
+                icon: const Icon(Icons.map),
+                label: Text(
+                  _deliveryLatitude != null && _deliveryLongitude != null
+                      ? 'Cambiar ubicación (${_deliveryLatitude!.toStringAsFixed(6)}, ${_deliveryLongitude!.toStringAsFixed(6)})'
+                      : 'Seleccionar ubicación en el mapa',
+                ),
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 40),
+                ),
               ),
             ],
 
