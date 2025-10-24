@@ -32,6 +32,19 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
     print('🖼️ Images: $_existingImages');
   }
 
+  @override
+  void didUpdateWidget(ImagePickerWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Si las imágenes iniciales cambiaron, actualizar
+    if (oldWidget.initialImages != widget.initialImages) {
+      setState(() {
+        _existingImages = List.from(widget.initialImages);
+        print('🖼️ ImagePickerWidget UPDATED with ${_existingImages.length} existing images');
+        print('🖼️ Images: $_existingImages');
+      });
+    }
+  }
+
   int get _totalImages => _selectedFiles.length + _existingImages.length;
   bool get _canAddMore => _totalImages < widget.maxImages;
 

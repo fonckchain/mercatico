@@ -362,6 +362,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
 
               // Selector de imágenes
               ImagePickerWidget(
+                key: ValueKey(_existingImageUrls.length),
                 initialImages: _existingImageUrls,
                 onImagesChanged: (selectedFiles, existingUrls) {
                   setState(() {
