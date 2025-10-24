@@ -106,23 +106,25 @@ class _BuyerProfileScreenState extends State<BuyerProfileScreen> {
     });
 
     try {
-      final updateData = {
-        'first_name': _firstNameController.text.trim(),
-        'last_name': _lastNameController.text.trim(),
-        'phone': _phoneController.text.trim(),
-        'buyer_profile': {
-          'province': _provinceController.text.trim(),
-          'canton': _cantonController.text.trim(),
-          'district': _districtController.text.trim(),
-          'address': _addressController.text.trim(),
-        },
+      final buyerProfile = <String, dynamic>{
+        'province': _provinceController.text.trim(),
+        'canton': _cantonController.text.trim(),
+        'district': _districtController.text.trim(),
+        'address': _addressController.text.trim(),
       };
 
       // Only include GPS coordinates if they are not null
       if (_latitude != null && _longitude != null) {
-        updateData['buyer_profile']['latitude'] = _latitude!.toStringAsFixed(6);
-        updateData['buyer_profile']['longitude'] = _longitude!.toStringAsFixed(6);
+        buyerProfile['latitude'] = _latitude!.toStringAsFixed(6);
+        buyerProfile['longitude'] = _longitude!.toStringAsFixed(6);
       }
+
+      final updateData = {
+        'first_name': _firstNameController.text.trim(),
+        'last_name': _lastNameController.text.trim(),
+        'phone': _phoneController.text.trim(),
+        'buyer_profile': buyerProfile,
+      };
 
       await _apiService.updateCurrentUser(updateData);
 
@@ -146,23 +148,27 @@ class _BuyerProfileScreenState extends State<BuyerProfileScreen> {
   }
 
   Future<void> _pickLocation() async {
-    final result = await Navigator.push<LatLng>(
+    await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => LocationPicker(
           initialLocation: _latitude != null && _longitude != null
               ? LatLng(_latitude!, _longitude!)
               : null,
+          onLocationSelected: (location, address) {
+            setState(() {
+              _latitude = location.latitude;
+              _longitude = location.longitude;
+              // Opcionalmente, podrías actualizar el campo de dirección con la dirección formateada
+              if (_addressController.text.isEmpty) {
+                _addressController.text = address;
+              }
+            });
+            Navigator.pop(context);
+          },
         ),
       ),
     );
-
-    if (result != null) {
-      setState(() {
-        _latitude = result.latitude;
-        _longitude = result.longitude;
-      });
-    }
   }
 
   Future<void> _logout() async {

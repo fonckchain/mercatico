@@ -90,6 +90,12 @@ class ApiService {
     return response.data;
   }
 
+  /// Actualizar perfil del usuario actual
+  Future<Map<String, dynamic>> updateCurrentUser(Map<String, dynamic> userData) async {
+    final response = await _dio.patch(ApiConstants.userMe, data: userData);
+    return response.data;
+  }
+
   // ==================== PRODUCTS ====================
 
   /// Obtener lista de productos
