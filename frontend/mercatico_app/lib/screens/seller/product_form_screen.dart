@@ -174,10 +174,9 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         _longitude = profile['longitude'] != null
             ? double.tryParse(profile['longitude'].toString())
             : null;
-        // Cargar valor predeterminado de accepts_cash del perfil del vendedor
+        // Cargar valores predeterminados de métodos de pago del perfil del vendedor
         _acceptsCash = profile['accepts_cash'] ?? true;
-        // Cargar valor predeterminado de accepts_sinpe (true si tiene número SINPE configurado)
-        _acceptsSinpe = profile['sinpe_number'] != null && profile['sinpe_number'].toString().isNotEmpty;
+        _acceptsSinpe = profile['accepts_sinpe'] ?? true;
         _loadingSellerLocation = false;
       });
     } catch (e) {

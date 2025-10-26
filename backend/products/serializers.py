@@ -78,6 +78,7 @@ class ProductSerializer(serializers.ModelSerializer):
             'stock',
             'show_stock',
             'accepts_cash',
+            'accepts_sinpe',
             'offers_pickup',
             'offers_delivery',
             'is_available',

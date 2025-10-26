@@ -34,6 +34,7 @@ class SellerProfileSerializer(serializers.ModelSerializer):
             'description',
             'sinpe_number',
             'accepts_cash',
+            'accepts_sinpe',
             'offers_pickup',
             'offers_delivery',
             'logo',

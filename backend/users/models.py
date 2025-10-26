@@ -150,11 +150,16 @@ class SellerProfile(models.Model):
         help_text='Número de teléfono para recibir pagos SINPE Móvil'
     )
 
-    # Accept cash on delivery
+    # Payment acceptance defaults
     accepts_cash = models.BooleanField(
         'acepta efectivo contra entrega',
         default=False,
-        help_text='Indica si el vendedor acepta pagos en efectivo al momento de la entrega'
+        help_text='Indica si el vendedor acepta pagos en efectivo al momento de la entrega (valor por defecto para nuevos productos)'
+    )
+    accepts_sinpe = models.BooleanField(
+        'acepta SINPE Móvil',
+        default=True,
+        help_text='Indica si el vendedor acepta pagos con SINPE Móvil (valor por defecto para nuevos productos)'
     )
 
     # Delivery options

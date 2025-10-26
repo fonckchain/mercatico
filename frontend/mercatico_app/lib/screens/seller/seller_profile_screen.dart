@@ -25,6 +25,7 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
 
   // Opciones
   bool _acceptsCash = false;
+  bool _acceptsSinpe = true;
   bool _offersPickup = true;
   bool _offersDelivery = false;
   bool _isLoading = true;
@@ -74,6 +75,7 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
               ? double.tryParse(profile['longitude'].toString())
               : null;
           _acceptsCash = profile['accepts_cash'] ?? false;
+          _acceptsSinpe = profile['accepts_sinpe'] ?? true;
           _offersPickup = profile['offers_pickup'] ?? true;
           _offersDelivery = profile['offers_delivery'] ?? false;
           _isLoading = false;
@@ -135,6 +137,7 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
         'description': _descriptionController.text.trim(),
         'sinpe_number': _sinpeNumberController.text.trim(),
         'accepts_cash': _acceptsCash,
+        'accepts_sinpe': _acceptsSinpe,
         'offers_pickup': _offersPickup,
         'offers_delivery': _offersDelivery,
       };
@@ -242,12 +245,27 @@ class _SellerProfileScreenState extends State<SellerProfileScreen> {
                     SwitchListTile(
                       title: const Text('Acepto efectivo'),
                       subtitle: const Text(
-                        'Acepto pagos en efectivo al momento de la entrega',
+                        'Acepto pagos en efectivo al momento de la entrega (valor por defecto para nuevos productos)',
                       ),
                       value: _acceptsCash,
                       onChanged: (value) {
                         setState(() {
                           _acceptsCash = value;
+                        });
+                      },
+                      activeColor: Colors.green,
+                    ),
+                    const SizedBox(height: 8),
+
+                    SwitchListTile(
+                      title: const Text('Acepto SINPE Móvil'),
+                      subtitle: const Text(
+                        'Acepto pagos con SINPE Móvil (valor por defecto para nuevos productos)',
+                      ),
+                      value: _acceptsSinpe,
+                      onChanged: (value) {
+                        setState(() {
+                          _acceptsSinpe = value;
                         });
                       },
                       activeColor: Colors.green,
