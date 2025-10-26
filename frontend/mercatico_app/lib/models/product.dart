@@ -117,9 +117,15 @@ class Product {
       'offers_pickup': offersPickup,
       'offers_delivery': offersDelivery,
       'image_url': imageUrl,
+      'images': images,
+      'main_image': imageUrl,
       'category': category,
       'seller': sellerId,
+      'seller_name': sellerName,
       'is_active': isActive,
+      'created_at': createdAt.toIso8601String(),
+      if (latitude != null) 'latitude': latitude.toString(),
+      if (longitude != null) 'longitude': longitude.toString(),
     };
   }
 

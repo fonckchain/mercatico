@@ -28,10 +28,17 @@ class SellerCart {
     Set<String> methods = {};
     bool firstItem = true;
 
+    print('=== DEBUG: availablePaymentMethods for seller $sellerName ===');
     for (var item in items) {
       Set<String> productMethods = {};
+      print('Product: ${item.product.name}');
+      print('  acceptsCash: ${item.product.acceptsCash} (type: ${item.product.acceptsCash.runtimeType})');
+      print('  acceptsSinpe: ${item.product.acceptsSinpe} (type: ${item.product.acceptsSinpe.runtimeType})');
+
       if (item.product.acceptsCash == true) productMethods.add('CASH');
       if (item.product.acceptsSinpe == true) productMethods.add('SINPE');
+
+      print('  productMethods: $productMethods');
 
       if (firstItem) {
         methods = productMethods;
@@ -39,7 +46,9 @@ class SellerCart {
       } else {
         methods = methods.intersection(productMethods);
       }
+      print('  methods after intersection: $methods');
     }
+    print('=== FINAL payment methods: $methods ===');
 
     return methods;
   }
@@ -51,10 +60,17 @@ class SellerCart {
     Set<String> methods = {};
     bool firstItem = true;
 
+    print('=== DEBUG: availableDeliveryMethods for seller $sellerName ===');
     for (var item in items) {
       Set<String> productMethods = {};
+      print('Product: ${item.product.name}');
+      print('  offersPickup: ${item.product.offersPickup} (type: ${item.product.offersPickup.runtimeType})');
+      print('  offersDelivery: ${item.product.offersDelivery} (type: ${item.product.offersDelivery.runtimeType})');
+
       if (item.product.offersPickup == true) productMethods.add('PICKUP');
       if (item.product.offersDelivery == true) productMethods.add('DELIVERY');
+
+      print('  productMethods: $productMethods');
 
       if (firstItem) {
         methods = productMethods;
@@ -62,7 +78,9 @@ class SellerCart {
       } else {
         methods = methods.intersection(productMethods);
       }
+      print('  methods after intersection: $methods');
     }
+    print('=== FINAL delivery methods: $methods ===');
 
     return methods;
   }
@@ -286,9 +304,44 @@ class CartService {
         final List<dynamic> cartData = jsonDecode(cartString);
         _carts.clear();
 
+        bool hasInvalidData = false;
+
         for (var sellerData in cartData) {
-          final cart = SellerCart.fromJson(sellerData);
-          _carts[cart.sellerId] = cart;
+          try {
+            final cart = SellerCart.fromJson(sellerData);
+
+            // Validate that products have the required fields
+            // If they don't, it means they were saved with old version
+            for (var item in cart.items) {
+              final productJson = (sellerData['items'] as List)
+                  .firstWhere((i) => i['product']['id'] == item.product.id)['product'];
+
+              // Check if critical fields are missing (indicates old format)
+              if (!productJson.containsKey('accepts_sinpe') ||
+                  !productJson.containsKey('offers_delivery')) {
+                hasInvalidData = true;
+                print('Warning: Cart has products saved in old format. Clearing cart.');
+                break;
+              }
+            }
+
+            if (hasInvalidData) {
+              break;
+            }
+
+            _carts[cart.sellerId] = cart;
+          } catch (e) {
+            print('Error loading seller cart: $e');
+            hasInvalidData = true;
+            break;
+          }
+        }
+
+        // Clear cart if we found invalid data
+        if (hasInvalidData) {
+          _carts.clear();
+          await _saveCart(); // Save empty cart
+          print('Cart cleared due to old format. Please re-add products.');
         }
       }
     } catch (e) {
