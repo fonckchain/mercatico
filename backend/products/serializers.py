@@ -125,6 +125,18 @@ class ProductSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Máximo 5 imágenes permitidas.")
         return value
 
+    def validate(self, data):
+        """Validate that product has at least one payment method."""
+        accepts_cash = data.get('accepts_cash', False)
+        accepts_sinpe = data.get('accepts_sinpe', False)
+
+        if not accepts_cash and not accepts_sinpe:
+            raise serializers.ValidationError(
+                "El producto debe aceptar al menos un método de pago (Efectivo o SINPE Móvil)."
+            )
+
+        return data
+
     def to_representation(self, instance):
         """Convert relative image URLs to absolute URLs."""
         data = super().to_representation(instance)

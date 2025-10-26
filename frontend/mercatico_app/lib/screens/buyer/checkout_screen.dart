@@ -103,9 +103,37 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     });
 
     try {
-      // TODO: Implement actual order creation API call
-      // This is a placeholder for the order creation logic
-      await Future.delayed(const Duration(seconds: 2));
+      // Get current user info for buyer details
+      final userData = await _apiService.getCurrentUser();
+
+      // Get seller ID from first cart item
+      final sellerId = _cartService.items.first.product.sellerId;
+
+      // Prepare order data
+      final orderData = <String, dynamic>{
+        'seller': sellerId,
+        'delivery_method': widget.deliveryMethod.toUpperCase(), // 'PICKUP' or 'DELIVERY'
+        'payment_method': _paymentMethod!.toUpperCase(), // 'SINPE' or 'CASH'
+        'buyer_phone': userData['phone'] ?? '',
+        'buyer_email': userData['email'] ?? '',
+        'buyer_notes': '',
+        'items': _cartService.items.map((item) => {
+          'product_id': item.product.id,
+          'quantity': item.quantity,
+        }).toList(),
+      };
+
+      // Add delivery information if applicable
+      if (widget.deliveryMethod == 'delivery') {
+        orderData['delivery_address'] = widget.deliveryAddress ?? '';
+        if (widget.deliveryLatitude != null && widget.deliveryLongitude != null) {
+          orderData['delivery_latitude'] = widget.deliveryLatitude!.toStringAsFixed(6);
+          orderData['delivery_longitude'] = widget.deliveryLongitude!.toStringAsFixed(6);
+        }
+      }
+
+      // Create order via API
+      final createdOrder = await _apiService.createOrder(orderData);
 
       // Clear cart after successful order
       await _cartService.clear();
