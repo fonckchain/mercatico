@@ -31,6 +31,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
   bool _showStock = false;
   bool _offersPickup = true;
   bool _offersDelivery = false;
+  bool _acceptsCash = true; // Valor predeterminado, se cargará del perfil del vendedor
   bool _isLoading = false;
   bool _loadingCategories = true;
   String? _errorMessage;
@@ -90,6 +91,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         _showStock = productData['show_stock'] ?? false;
         _offersPickup = productData['offers_pickup'] ?? true;
         _offersDelivery = productData['offers_delivery'] ?? false;
+        _acceptsCash = productData['accepts_cash'] ?? true;
 
         // Parse GPS coordinates
         if (productData['latitude'] != null) {
@@ -170,6 +172,8 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         _longitude = profile['longitude'] != null
             ? double.tryParse(profile['longitude'].toString())
             : null;
+        // Cargar valor predeterminado de accepts_cash del perfil del vendedor
+        _acceptsCash = profile['accepts_cash'] ?? true;
         _loadingSellerLocation = false;
       });
     } catch (e) {
@@ -235,7 +239,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         'show_stock': _showStock,
         'category': _selectedCategoryId,  // Send category UUID
         'is_available': _isActive,  // Backend expects 'is_available' not 'is_active'
-        'accepts_cash': true,  // Default value
+        'accepts_cash': _acceptsCash,  // Valor del switch
         'offers_pickup': _offersPickup,
         'offers_delivery': _offersDelivery,
         'images': _existingImageUrls,  // Mantener imágenes existentes
@@ -602,6 +606,32 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                 onChanged: (value) {
                   setState(() {
                     _offersDelivery = value;
+                  });
+                },
+                activeColor: Colors.green,
+              ),
+
+              const SizedBox(height: 16),
+              const Text(
+                'Opciones de pago',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 8),
+
+              // Acepta efectivo
+              SwitchListTile(
+                title: const Text('Acepta pago en efectivo'),
+                subtitle: const Text(
+                  'El comprador puede pagar en efectivo al recibir el producto',
+                ),
+                value: _acceptsCash,
+                onChanged: (value) {
+                  setState(() {
+                    _acceptsCash = value;
                   });
                 },
                 activeColor: Colors.green,

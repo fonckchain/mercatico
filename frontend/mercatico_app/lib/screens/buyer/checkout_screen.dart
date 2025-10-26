@@ -50,28 +50,29 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   Future<void> _loadSellerPaymentInfo() async {
     try {
-      // Get seller info from first cart item
+      // Get product and seller info from first cart item
       if (_cartService.items.isNotEmpty) {
         final firstProduct = _cartService.items.first.product;
         final productData = await _apiService.getProduct(firstProduct.id);
         final sellerInfo = productData['seller_info'];
 
-        if (sellerInfo != null) {
-          setState(() {
-            _sellerAcceptsCash = sellerInfo['accepts_cash'] ?? false;
-            _sellerSinpeNumber = sellerInfo['sinpe_number'];
-            _sellerAcceptsSinpe = _sellerSinpeNumber != null && _sellerSinpeNumber!.isNotEmpty;
+        setState(() {
+          // accepts_cash viene del producto (configuración por producto)
+          _sellerAcceptsCash = productData['accepts_cash'] ?? false;
 
-            // Set default payment method
-            if (_sellerAcceptsSinpe) {
-              _paymentMethod = 'sinpe';
-            } else if (_sellerAcceptsCash) {
-              _paymentMethod = 'cash';
-            }
+          // sinpe_number viene del perfil del vendedor (es global)
+          _sellerSinpeNumber = sellerInfo?['sinpe_number'];
+          _sellerAcceptsSinpe = _sellerSinpeNumber != null && _sellerSinpeNumber!.isNotEmpty;
 
-            _isLoading = false;
-          });
-        }
+          // Set default payment method
+          if (_sellerAcceptsSinpe) {
+            _paymentMethod = 'sinpe';
+          } else if (_sellerAcceptsCash) {
+            _paymentMethod = 'cash';
+          }
+
+          _isLoading = false;
+        });
       }
     } catch (e) {
       print('Error loading seller payment info: $e');
@@ -102,7 +103,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       await Future.delayed(const Duration(seconds: 2));
 
       // Clear cart after successful order
-      await _cartService.clearCart();
+      await _cartService.clear();
 
       if (mounted) {
         // Show success dialog
