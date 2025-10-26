@@ -9,6 +9,9 @@ class Product {
   final int stock;
   final bool showStock;
   final bool acceptsCash;
+  final bool acceptsSinpe;
+  final bool offersPickup;
+  final bool offersDelivery;
   final String? imageUrl; // URL de la imagen principal (para compatibilidad)
   final List<String> images; // Lista completa de URLs de imágenes
   final String category;
@@ -28,6 +31,9 @@ class Product {
     required this.stock,
     this.showStock = false,
     this.acceptsCash = true,
+    this.acceptsSinpe = true,
+    this.offersPickup = true,
+    this.offersDelivery = false,
     this.imageUrl,
     this.images = const [],
     required this.category,
@@ -73,6 +79,9 @@ class Product {
       stock: json['stock'] ?? 0,
       showStock: json['show_stock'] ?? false,
       acceptsCash: json['accepts_cash'] ?? true,
+      acceptsSinpe: json['accepts_sinpe'] ?? true,
+      offersPickup: json['offers_pickup'] ?? true,
+      offersDelivery: json['offers_delivery'] ?? false,
       imageUrl: mainImageUrl,
       images: imagesList,
       category: json['category'] ?? '',
@@ -104,6 +113,9 @@ class Product {
       'stock': stock,
       'show_stock': showStock,
       'accepts_cash': acceptsCash,
+      'accepts_sinpe': acceptsSinpe,
+      'offers_pickup': offersPickup,
+      'offers_delivery': offersDelivery,
       'image_url': imageUrl,
       'category': category,
       'seller': sellerId,

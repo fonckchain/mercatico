@@ -285,37 +285,51 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                   child: ElevatedButton.icon(
                                     onPressed: _product!.hasStock
                                         ? () async {
-                                            await _cartService.addItem(
+                                            final error = await _cartService.addItem(
                                               _product!,
                                               quantity: _selectedQuantity,
                                             );
+
                                             if (mounted) {
-                                              ScaffoldMessenger.of(context)
-                                                  .showSnackBar(
-                                                SnackBar(
-                                                  content: Text(
-                                                    '$_selectedQuantity ${_selectedQuantity == 1 ? 'producto agregado' : 'productos agregados'} al carrito',
+                                              if (error != null) {
+                                                // Mostrar error de incompatibilidad
+                                                ScaffoldMessenger.of(context)
+                                                    .showSnackBar(
+                                                  SnackBar(
+                                                    content: Text(error),
+                                                    backgroundColor: Colors.red,
+                                                    duration: const Duration(seconds: 4),
                                                   ),
-                                                  backgroundColor: Colors.green,
-                                                  action: SnackBarAction(
-                                                    label: 'Ver carrito',
-                                                    textColor: Colors.white,
-                                                    onPressed: () {
-                                                      Navigator.push(
-                                                        context,
-                                                        MaterialPageRoute(
-                                                          builder: (context) =>
-                                                              const CartScreen(),
-                                                        ),
+                                                );
+                                              } else {
+                                                // Éxito
+                                                ScaffoldMessenger.of(context)
+                                                    .showSnackBar(
+                                                  SnackBar(
+                                                    content: Text(
+                                                      '$_selectedQuantity ${_selectedQuantity == 1 ? 'producto agregado' : 'productos agregados'} al carrito',
+                                                    ),
+                                                    backgroundColor: Colors.green,
+                                                    action: SnackBarAction(
+                                                      label: 'Ver carrito',
+                                                      textColor: Colors.white,
+                                                      onPressed: () {
+                                                        Navigator.push(
+                                                          context,
+                                                          MaterialPageRoute(
+                                                            builder: (context) =>
+                                                                const CartScreen(),
+                                                          ),
                                                       );
                                                     },
+                                                    ),
                                                   ),
-                                                ),
-                                              );
-                                              // Reset quantity to 1
-                                              setState(() {
-                                                _selectedQuantity = 1;
-                                              });
+                                                );
+                                                // Reset quantity to 1
+                                                setState(() {
+                                                  _selectedQuantity = 1;
+                                                });
+                                              }
                                             }
                                           }
                                         : null,

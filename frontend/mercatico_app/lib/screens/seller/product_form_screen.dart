@@ -629,30 +629,44 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
               // Acepta efectivo
               SwitchListTile(
                 title: const Text('Acepta pago en efectivo'),
-                subtitle: const Text(
-                  'El comprador puede pagar en efectivo al recibir el producto',
+                subtitle: Text(
+                  _acceptsCash && !_acceptsSinpe
+                      ? 'No puedes desactivar el único método de pago disponible'
+                      : 'El comprador puede pagar en efectivo al recibir el producto',
+                  style: TextStyle(
+                    color: _acceptsCash && !_acceptsSinpe ? Colors.orange : null,
+                  ),
                 ),
                 value: _acceptsCash,
-                onChanged: (value) {
-                  setState(() {
-                    _acceptsCash = value;
-                  });
-                },
+                onChanged: _acceptsSinpe || !_acceptsCash
+                    ? (value) {
+                        setState(() {
+                          _acceptsCash = value;
+                        });
+                      }
+                    : null, // Disabled if it's the only payment method
                 activeColor: Colors.green,
               ),
 
               // Acepta SINPE Móvil
               SwitchListTile(
                 title: const Text('Acepta SINPE Móvil'),
-                subtitle: const Text(
-                  'El comprador puede pagar con SINPE Móvil',
+                subtitle: Text(
+                  _acceptsSinpe && !_acceptsCash
+                      ? 'No puedes desactivar el único método de pago disponible'
+                      : 'El comprador puede pagar con SINPE Móvil',
+                  style: TextStyle(
+                    color: _acceptsSinpe && !_acceptsCash ? Colors.orange : null,
+                  ),
                 ),
                 value: _acceptsSinpe,
-                onChanged: (value) {
-                  setState(() {
-                    _acceptsSinpe = value;
-                  });
-                },
+                onChanged: _acceptsCash || !_acceptsSinpe
+                    ? (value) {
+                        setState(() {
+                          _acceptsSinpe = value;
+                        });
+                      }
+                    : null, // Disabled if it's the only payment method
                 activeColor: Colors.green,
               ),
 
