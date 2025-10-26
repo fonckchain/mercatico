@@ -152,15 +152,28 @@ class OrderCreateSerializer(serializers.ModelSerializer):
         """Create order with items."""
         from django.db import transaction
         from products.models import Product
+        from decimal import Decimal
 
         items_data = validated_data.pop('items')
         buyer = self.context['request'].user
 
         # Use transaction to ensure atomicity
         with transaction.atomic():
-            # Create order
+            # Pre-calculate subtotal from items before creating order
+            subtotal = Decimal('0.00')
+            for item_data in items_data:
+                product = Product.objects.get(id=item_data['product_id'])
+                subtotal += product.price * item_data['quantity']
+
+            # Calculate total (subtotal + delivery fee)
+            delivery_fee = validated_data.get('delivery_fee', Decimal('0.00'))
+            total = subtotal + delivery_fee
+
+            # Create order with calculated totals
             order = Order.objects.create(
                 buyer=buyer,
+                subtotal=subtotal,
+                total=total,
                 **validated_data
             )
 
@@ -187,9 +200,6 @@ class OrderCreateSerializer(serializers.ModelSerializer):
                 # Reduce stock
                 product.stock -= item_data['quantity']
                 product.save(update_fields=['stock'])
-
-            # Calculate totals
-            order.calculate_total()
 
         return order
 
