@@ -137,11 +137,11 @@ class Order(models.Model):
     def save(self, *args, **kwargs):
         """Generate order number if not exists."""
         if not self.order_number:
-            # Generate order number: ORD-YYYYMMDD-UUID[:8]
+            # Generate order number: YYYYMMDD-UUID[:6] (max 20 chars: 8 + 1 + 6 + 5 = 20)
             from django.utils import timezone
             date_str = timezone.now().strftime('%Y%m%d')
-            uuid_str = str(self.id)[:8].upper()
-            self.order_number = f"ORD-{date_str}-{uuid_str}"
+            uuid_str = str(self.id)[:6].upper()
+            self.order_number = f"{date_str}-{uuid_str}"
         super().save(*args, **kwargs)
 
     def calculate_total(self):
