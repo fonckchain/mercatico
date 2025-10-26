@@ -150,43 +150,46 @@ class OrderCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         """Create order with items."""
+        from django.db import transaction
+        from products.models import Product
+
         items_data = validated_data.pop('items')
         buyer = self.context['request'].user
 
-        # Create order
-        order = Order.objects.create(
-            buyer=buyer,
-            **validated_data
-        )
-
-        # Create order items
-        from products.models import Product
-
-        for item_data in items_data:
-            product = Product.objects.get(id=item_data['product_id'])
-
-            # Check stock
-            if product.stock < item_data['quantity']:
-                order.delete()
-                raise serializers.ValidationError(
-                    f"Stock insuficiente para {product.name}. Disponible: {product.stock}"
-                )
-
-            # Create item
-            OrderItem.objects.create(
-                order=order,
-                product=product,
-                product_name=product.name,
-                product_price=product.price,
-                quantity=item_data['quantity']
+        # Use transaction to ensure atomicity
+        with transaction.atomic():
+            # Create order
+            order = Order.objects.create(
+                buyer=buyer,
+                **validated_data
             )
 
-            # Reduce stock
-            product.stock -= item_data['quantity']
-            product.save()
+            # Create order items and update stock
+            for item_data in items_data:
+                # Lock the product row for update to prevent race conditions
+                product = Product.objects.select_for_update().get(id=item_data['product_id'])
 
-        # Calculate totals
-        order.calculate_total()
+                # Check stock
+                if product.stock < item_data['quantity']:
+                    raise serializers.ValidationError(
+                        f"Stock insuficiente para {product.name}. Disponible: {product.stock}"
+                    )
+
+                # Create item
+                OrderItem.objects.create(
+                    order=order,
+                    product=product,
+                    product_name=product.name,
+                    product_price=product.price,
+                    quantity=item_data['quantity']
+                )
+
+                # Reduce stock
+                product.stock -= item_data['quantity']
+                product.save(update_fields=['stock'])
+
+            # Calculate totals
+            order.calculate_total()
 
         return order
 

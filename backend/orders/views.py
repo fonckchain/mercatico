@@ -105,22 +105,32 @@ class OrderViewSet(viewsets.ModelViewSet):
 
     def perform_destroy(self, instance):
         """Cancel order instead of deleting."""
+        from django.db import transaction
+
         if instance.status not in [Order.OrderStatus.PENDING, Order.OrderStatus.PAYMENT_PENDING]:
             raise permissions.PermissionDenied(
                 "Solo se pueden cancelar órdenes en estado Pendiente o Pago Pendiente"
             )
 
-        instance.status = Order.OrderStatus.CANCELLED
-        instance.save()
+        # Use transaction to ensure atomicity
+        with transaction.atomic():
+            # Restore stock for all items in the order
+            for item in instance.items.all():
+                product = item.product
+                product.stock += item.quantity
+                product.save(update_fields=['stock'])
 
-        # Create status history
-        from orders.models import OrderStatusHistory
-        OrderStatusHistory.objects.create(
-            order=instance,
-            status=Order.OrderStatus.CANCELLED,
-            notes="Orden cancelada por el usuario",
-            changed_by=self.request.user
-        )
+            instance.status = Order.OrderStatus.CANCELLED
+            instance.save()
+
+            # Create status history
+            from orders.models import OrderStatusHistory
+            OrderStatusHistory.objects.create(
+                order=instance,
+                status=Order.OrderStatus.CANCELLED,
+                notes="Orden cancelada por el usuario",
+                changed_by=self.request.user
+            )
 
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def update_status(self, request, pk=None):

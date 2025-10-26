@@ -153,6 +153,16 @@ class Product(models.Model):
     def __str__(self):
         return f"{self.name} - {self.seller.seller_profile.business_name}"
 
+    def clean(self):
+        """Validate model fields."""
+        from django.core.exceptions import ValidationError
+
+        # Ensure stock is never negative
+        if self.stock < 0:
+            raise ValidationError({
+                'stock': 'El stock no puede ser negativo.'
+            })
+
     @property
     def is_in_stock(self):
         """Check if product is in stock."""
