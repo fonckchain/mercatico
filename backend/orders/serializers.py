@@ -156,6 +156,13 @@ class OrderCreateSerializer(serializers.ModelSerializer):
         items_data = validated_data.pop('items')
         buyer = self.context['request'].user
 
+        # Debug: Log validated data to identify the problem
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Creating order with validated_data: {validated_data}")
+        for key, value in validated_data.items():
+            logger.error(f"  {key}: {value} (type: {type(value).__name__}, len: {len(str(value)) if value else 0})")
+
         # Use transaction to ensure atomicity
         with transaction.atomic():
             # Create order
