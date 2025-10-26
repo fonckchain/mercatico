@@ -4,6 +4,7 @@ import '../../core/services/cart_service.dart';
 import '../../core/services/api_service.dart';
 
 class CheckoutScreen extends StatefulWidget {
+  final String sellerId; // ID del vendedor
   final String deliveryMethod; // 'pickup' or 'delivery'
   final String? deliveryAddress;
   final double? deliveryLatitude;
@@ -15,6 +16,7 @@ class CheckoutScreen extends StatefulWidget {
 
   const CheckoutScreen({
     super.key,
+    required this.sellerId,
     required this.deliveryMethod,
     this.deliveryAddress,
     this.deliveryLatitude,
@@ -50,35 +52,45 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   Future<void> _loadSellerPaymentInfo() async {
     try {
-      // Get product and seller info from first cart item
-      if (_cartService.items.isNotEmpty) {
-        final firstProduct = _cartService.items.first.product;
-        final productData = await _apiService.getProduct(firstProduct.id);
-        final sellerInfo = productData['seller_info'];
-
+      // Get seller cart
+      final sellerCart = _cartService.getSellerCart(widget.sellerId);
+      if (sellerCart == null || sellerCart.items.isEmpty) {
         setState(() {
-          // accepts_cash y accepts_sinpe vienen del producto (configuración por producto)
-          _sellerAcceptsCash = productData['accepts_cash'] ?? false;
-          final productAcceptsSinpe = productData['accepts_sinpe'] ?? false;
-
-          // sinpe_number viene del perfil del vendedor (es global)
-          _sellerSinpeNumber = sellerInfo?['sinpe_number'];
-
-          // Solo acepta SINPE si el producto lo acepta Y el vendedor tiene número SINPE
-          _sellerAcceptsSinpe = productAcceptsSinpe &&
-                                _sellerSinpeNumber != null &&
-                                _sellerSinpeNumber!.isNotEmpty;
-
-          // Set default payment method
-          if (_sellerAcceptsSinpe) {
-            _paymentMethod = 'sinpe';
-          } else if (_sellerAcceptsCash) {
-            _paymentMethod = 'cash';
-          }
-
           _isLoading = false;
         });
+        return;
       }
+
+      // Get available payment methods from the seller cart
+      final availablePayments = sellerCart.availablePaymentMethods;
+
+      // Get product data for SINPE number
+      final firstProduct = sellerCart.items.first.product;
+      final productData = await _apiService.getProduct(firstProduct.id);
+      final sellerInfo = productData['seller_info'];
+
+      setState(() {
+        // Use the intersection of payment methods
+        _sellerAcceptsCash = availablePayments.contains('CASH');
+        _sellerAcceptsSinpe = availablePayments.contains('SINPE');
+
+        // sinpe_number viene del perfil del vendedor (es global)
+        _sellerSinpeNumber = sellerInfo?['sinpe_number'];
+
+        // Verify SINPE has number
+        if (_sellerAcceptsSinpe && (_sellerSinpeNumber == null || _sellerSinpeNumber!.isEmpty)) {
+          _sellerAcceptsSinpe = false;
+        }
+
+        // Set default payment method
+        if (_sellerAcceptsSinpe) {
+          _paymentMethod = 'sinpe';
+        } else if (_sellerAcceptsCash) {
+          _paymentMethod = 'cash';
+        }
+
+        _isLoading = false;
+      });
     } catch (e) {
       print('Error loading seller payment info: $e');
       setState(() {
@@ -106,18 +118,21 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       // Get current user info for buyer details
       final userData = await _apiService.getCurrentUser();
 
-      // Get seller ID from first cart item
-      final sellerId = _cartService.items.first.product.sellerId;
+      // Get items only from this seller
+      final sellerCart = _cartService.getSellerCart(widget.sellerId);
+      if (sellerCart == null || sellerCart.items.isEmpty) {
+        throw Exception('Carrito vacío para este vendedor');
+      }
 
       // Prepare order data
       final orderData = <String, dynamic>{
-        'seller': sellerId,
+        'seller': widget.sellerId,
         'delivery_method': widget.deliveryMethod.toUpperCase(), // 'PICKUP' or 'DELIVERY'
         'payment_method': _paymentMethod!.toUpperCase(), // 'SINPE' or 'CASH'
         'buyer_phone': userData['phone'] ?? '',
         'buyer_email': userData['email'] ?? '',
         'buyer_notes': '',
-        'items': _cartService.items.map((item) => {
+        'items': sellerCart.items.map((item) => {
           'product_id': item.product.id,
           'quantity': item.quantity,
         }).toList(),
@@ -135,8 +150,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       // Create order via API
       final createdOrder = await _apiService.createOrder(orderData);
 
-      // Clear cart after successful order
-      await _cartService.clear();
+      // Clear only this seller's cart after successful order
+      await _cartService.clearSeller(widget.sellerId);
 
       if (mounted) {
         // Show success dialog
@@ -262,26 +277,29 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          ..._cartService.items.map((item) => Padding(
-                                padding: const EdgeInsets.only(bottom: 8),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        '${item.quantity}x ${item.product.name}',
-                                        style: const TextStyle(fontSize: 14),
+                          ...(() {
+                            final sellerCart = _cartService.getSellerCart(widget.sellerId);
+                            return sellerCart?.items.map((item) => Padding(
+                                  padding: const EdgeInsets.only(bottom: 8),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          '${item.quantity}x ${item.product.name}',
+                                          style: const TextStyle(fontSize: 14),
+                                        ),
                                       ),
-                                    ),
-                                    Text(
-                                      '₡${(item.product.price * item.quantity).toStringAsFixed(2)}',
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.w500,
+                                      Text(
+                                        '₡${(item.product.price * item.quantity).toStringAsFixed(2)}',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w500,
+                                        ),
                                       ),
-                                    ),
-                                  ],
-                                ),
-                              )),
+                                    ],
+                                  ),
+                                )) ?? [];
+                          })(),
                           const Divider(),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -294,7 +312,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                 ),
                               ),
                               Text(
-                                _cartService.formattedTotalPrice,
+                                '₡${(_cartService.getSellerCart(widget.sellerId)?.totalPrice ?? 0).toStringAsFixed(2)}',
                                 style: const TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,

@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../core/services/cart_service.dart';
 import '../../core/services/api_service.dart';
 import '../../models/cart_item.dart';
-import '../../widgets/location_picker.dart';
 import 'checkout_screen.dart';
 
 class CartScreen extends StatefulWidget {
@@ -15,156 +13,27 @@ class CartScreen extends StatefulWidget {
 
 class _CartScreenState extends State<CartScreen> {
   final CartService _cartService = CartService();
-  final ApiService _apiService = ApiService();
-  String _deliveryMethod = 'pickup'; // 'pickup' o 'delivery'
-  final TextEditingController _addressController = TextEditingController();
-
-  // Buyer delivery location
-  double? _deliveryLatitude;
-  double? _deliveryLongitude;
-
-  // Seller pickup location (from first item in cart)
-  String? _sellerBusinessName;
-  String? _sellerAddress;
-  double? _pickupLatitude;
-  double? _pickupLongitude;
-
-  // Payment methods accepted (from first product in cart)
-  bool _acceptsCash = false;
-  bool _acceptsSinpe = false;
-  String? _sinpeNumber;
-
-  bool _isLoadingLocations = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadLocations();
-  }
-
-  @override
-  void dispose() {
-    _addressController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _loadLocations() async {
-    try {
-      // Load buyer's profile for delivery location
-      final userData = await _apiService.getCurrentUser();
-      final buyerProfile = userData['buyer_profile'];
-
-      if (buyerProfile != null) {
-        _addressController.text = buyerProfile['address'] ?? '';
-        if (buyerProfile['latitude'] != null) {
-          _deliveryLatitude = double.tryParse(buyerProfile['latitude'].toString());
-        }
-        if (buyerProfile['longitude'] != null) {
-          _deliveryLongitude = double.tryParse(buyerProfile['longitude'].toString());
-        }
-      }
-
-      // Load seller's pickup location and payment info from first cart item
-      if (_cartService.items.isNotEmpty) {
-        final firstProduct = _cartService.items.first.product;
-        final sellerId = firstProduct.sellerId;
-
-        if (sellerId != null) {
-          final productData = await _apiService.getProduct(firstProduct.id);
-          final sellerInfo = productData['seller_info'];
-
-          if (sellerInfo != null) {
-            _sellerBusinessName = sellerInfo['business_name'];
-            _sellerAddress = sellerInfo['address'];
-            if (sellerInfo['latitude'] != null) {
-              _pickupLatitude = double.tryParse(sellerInfo['latitude'].toString());
-            }
-            if (sellerInfo['longitude'] != null) {
-              _pickupLongitude = double.tryParse(sellerInfo['longitude'].toString());
-            }
-
-            // Load SINPE number from seller profile
-            _sinpeNumber = sellerInfo['sinpe_number'];
-          }
-
-          // Load payment methods from product
-          _acceptsCash = productData['accepts_cash'] ?? false;
-          _acceptsSinpe = productData['accepts_sinpe'] ?? false;
-        }
-      }
-
-      setState(() {
-        _isLoadingLocations = false;
-      });
-    } catch (e) {
-      print('Error loading locations: $e');
-      setState(() {
-        _isLoadingLocations = false;
-      });
-    }
-  }
-
-  Future<void> _pickDeliveryLocation() async {
-    await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => LocationPicker(
-          initialLocation: _deliveryLatitude != null && _deliveryLongitude != null
-              ? LatLng(_deliveryLatitude!, _deliveryLongitude!)
-              : null,
-          onLocationSelected: (location, address) {
-            setState(() {
-              _deliveryLatitude = location.latitude;
-              _deliveryLongitude = location.longitude;
-              if (_addressController.text.isEmpty) {
-                _addressController.text = address;
-              }
-            });
-            Navigator.pop(context);
-          },
-        ),
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Carrito de Compras'),
+        title: Text('Carrito (${_cartService.sellerCount} ${_cartService.sellerCount == 1 ? 'vendedor' : 'vendedores'})'),
         backgroundColor: Colors.green,
         foregroundColor: Colors.white,
       ),
       body: _cartService.isEmpty
           ? _buildEmptyCart()
-          : Column(
-              children: [
-                Expanded(
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: _cartService.items.length,
-                    itemBuilder: (context, index) {
-                      return _CartItemCard(
-                        item: _cartService.items[index],
-                        onQuantityChanged: (newQuantity) async {
-                          await _cartService.updateQuantity(
-                            _cartService.items[index].product.id,
-                            newQuantity,
-                          );
-                          setState(() {});
-                        },
-                        onRemove: () async {
-                          await _cartService.removeItem(
-                            _cartService.items[index].product.id,
-                          );
-                          setState(() {});
-                        },
-                      );
-                    },
-                  ),
-                ),
-                _buildCartSummary(),
-              ],
+          : ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: _cartService.sellerCarts.length,
+              itemBuilder: (context, index) {
+                final sellerCart = _cartService.sellerCarts[index];
+                return _SellerCartSection(
+                  sellerCart: sellerCart,
+                  onUpdate: () => setState(() {}),
+                );
+              },
             ),
     );
   }
@@ -208,291 +77,420 @@ class _CartScreenState extends State<CartScreen> {
       ),
     );
   }
+}
 
-  Widget _buildCartSummary() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.3),
-            spreadRadius: 1,
-            blurRadius: 5,
-            offset: const Offset(0, -3),
+/// Widget que muestra el carrito de un vendedor específico
+class _SellerCartSection extends StatefulWidget {
+  final SellerCart sellerCart;
+  final VoidCallback onUpdate;
+
+  const _SellerCartSection({
+    required this.sellerCart,
+    required this.onUpdate,
+  });
+
+  @override
+  State<_SellerCartSection> createState() => _SellerCartSectionState();
+}
+
+class _SellerCartSectionState extends State<_SellerCartSection> {
+  final CartService _cartService = CartService();
+  final ApiService _apiService = ApiService();
+
+  String _deliveryMethod = 'pickup';
+  final TextEditingController _addressController = TextEditingController();
+
+  // Buyer delivery location
+  double? _deliveryLatitude;
+  double? _deliveryLongitude;
+
+  // Seller pickup location
+  String? _sellerAddress;
+  double? _pickupLatitude;
+  double? _pickupLongitude;
+
+  // Payment info
+  String? _sinpeNumber;
+
+  bool _isLoadingInfo = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadInfo();
+  }
+
+  @override
+  void dispose() {
+    _addressController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadInfo() async {
+    try {
+      // Load buyer profile
+      final userData = await _apiService.getCurrentUser();
+      final buyerProfile = userData['buyer_profile'];
+
+      if (buyerProfile != null) {
+        _addressController.text = buyerProfile['address'] ?? '';
+        if (buyerProfile['latitude'] != null) {
+          _deliveryLatitude = double.tryParse(buyerProfile['latitude'].toString());
+        }
+        if (buyerProfile['longitude'] != null) {
+          _deliveryLongitude = double.tryParse(buyerProfile['longitude'].toString());
+        }
+      }
+
+      // Load seller info from first product
+      if (widget.sellerCart.items.isNotEmpty) {
+        final firstProduct = widget.sellerCart.items.first.product;
+        final productData = await _apiService.getProduct(firstProduct.id);
+        final sellerInfo = productData['seller_info'];
+
+        if (sellerInfo != null) {
+          _sellerAddress = sellerInfo['address'];
+          if (sellerInfo['latitude'] != null) {
+            _pickupLatitude = double.tryParse(sellerInfo['latitude'].toString());
+          }
+          if (sellerInfo['longitude'] != null) {
+            _pickupLongitude = double.tryParse(sellerInfo['longitude'].toString());
+          }
+          _sinpeNumber = sellerInfo['sinpe_number'];
+        }
+      }
+
+      setState(() {
+        _isLoadingInfo = false;
+      });
+    } catch (e) {
+      print('Error loading info: $e');
+      setState(() {
+        _isLoadingInfo = false;
+      });
+    }
+  }
+
+  void _goToCheckout() {
+    // Validate delivery method is available
+    final availableMethods = widget.sellerCart.availableDeliveryMethods;
+    final selectedMethod = _deliveryMethod.toUpperCase();
+
+    if (!availableMethods.contains(selectedMethod)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'El método de entrega "$_deliveryMethod" no está disponible para todos los productos de ${widget.sellerCart.sellerName}',
           ),
-        ],
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Validate payment methods available
+    if (widget.sellerCart.availablePaymentMethods.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'No hay métodos de pago compatibles entre los productos de este vendedor',
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Validate delivery address if needed
+    if (_deliveryMethod == 'delivery' && _addressController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Por favor ingresa la dirección de entrega'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CheckoutScreen(
+          sellerId: widget.sellerCart.sellerId,
+          deliveryMethod: _deliveryMethod,
+          deliveryAddress: _deliveryMethod == 'delivery' ? _addressController.text : null,
+          deliveryLatitude: _deliveryMethod == 'delivery' ? _deliveryLatitude : null,
+          deliveryLongitude: _deliveryMethod == 'delivery' ? _deliveryLongitude : null,
+          pickupAddress: _deliveryMethod == 'pickup' ? _sellerAddress : null,
+          pickupLatitude: _deliveryMethod == 'pickup' ? _pickupLatitude : null,
+          pickupLongitude: _deliveryMethod == 'pickup' ? _pickupLongitude : null,
+          sellerBusinessName: widget.sellerCart.sellerName,
+        ),
       ),
-      child: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Delivery Method Selection
-            const Text(
-              'Método de entrega:',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
+    ).then((_) => widget.onUpdate());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      elevation: 3,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Seller Header
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.green.shade50,
+              border: Border(
+                bottom: BorderSide(color: Colors.green.shade200),
               ),
             ),
-            const SizedBox(height: 8),
-            Row(
+            child: Row(
               children: [
+                Icon(Icons.store, color: Colors.green.shade700),
+                const SizedBox(width: 12),
                 Expanded(
-                  child: RadioListTile<String>(
-                    title: const Text('Recoger'),
-                    value: 'pickup',
-                    groupValue: _deliveryMethod,
-                    onChanged: (value) {
-                      setState(() {
-                        _deliveryMethod = value!;
-                      });
-                    },
-                    dense: true,
-                    contentPadding: EdgeInsets.zero,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.sellerCart.sellerName,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        '${widget.sellerCart.itemCount} ${widget.sellerCart.itemCount == 1 ? 'producto' : 'productos'}',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                Expanded(
-                  child: RadioListTile<String>(
-                    title: const Text('Entrega'),
-                    value: 'delivery',
-                    groupValue: _deliveryMethod,
-                    onChanged: (value) {
-                      setState(() {
-                        _deliveryMethod = value!;
-                      });
-                    },
-                    dense: true,
-                    contentPadding: EdgeInsets.zero,
-                  ),
-                ),
-              ],
-            ),
-
-            // Pickup Location Info
-            if (_deliveryMethod == 'pickup' && !_isLoadingLocations) ...[
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.green.shade50,
-                  border: Border.all(color: Colors.green.shade200),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.store, color: Colors.green.shade700, size: 20),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Lugar de recogida:',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.green.shade700,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    if (_sellerBusinessName != null)
-                      Text(
-                        _sellerBusinessName!,
-                        style: const TextStyle(fontWeight: FontWeight.w500),
-                      ),
-                    if (_sellerAddress != null && _sellerAddress!.isNotEmpty)
-                      Text(
-                        _sellerAddress!,
-                        style: TextStyle(color: Colors.grey.shade700),
-                      ),
-                    if (_pickupLatitude != null && _pickupLongitude != null)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 4),
-                        child: Text(
-                          'GPS: ${_pickupLatitude!.toStringAsFixed(6)}, ${_pickupLongitude!.toStringAsFixed(6)}',
-                          style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ],
-
-            // Delivery Address Field (if delivery selected)
-            if (_deliveryMethod == 'delivery') ...[
-              const SizedBox(height: 8),
-              TextField(
-                controller: _addressController,
-                decoration: const InputDecoration(
-                  labelText: 'Dirección de entrega',
-                  hintText: 'Ingresa tu dirección completa',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.location_on),
-                  isDense: true,
-                ),
-                maxLines: 2,
-              ),
-              const SizedBox(height: 8),
-              OutlinedButton.icon(
-                onPressed: _pickDeliveryLocation,
-                icon: const Icon(Icons.map),
-                label: Text(
-                  _deliveryLatitude != null && _deliveryLongitude != null
-                      ? 'Cambiar ubicación (${_deliveryLatitude!.toStringAsFixed(6)}, ${_deliveryLongitude!.toStringAsFixed(6)})'
-                      : 'Seleccionar ubicación en el mapa',
-                ),
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size(double.infinity, 40),
-                ),
-              ),
-            ],
-
-            // Payment Methods Accepted Section
-            if (!_isLoadingLocations) ...[
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
-                  border: Border.all(color: Colors.blue.shade200),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.payment, color: Colors.blue.shade700, size: 20),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Métodos de pago aceptados:',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.blue.shade700,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    if (_acceptsSinpe && _sinpeNumber != null && _sinpeNumber!.isNotEmpty)
-                      Row(
-                        children: [
-                          Icon(Icons.phone_android, color: Colors.green.shade700, size: 18),
-                          const SizedBox(width: 8),
-                          Text(
-                            'SINPE Móvil: $_sinpeNumber',
-                            style: const TextStyle(fontSize: 14),
-                          ),
-                        ],
-                      ),
-                    if (_acceptsSinpe && _acceptsCash) const SizedBox(height: 4),
-                    if (_acceptsCash)
-                      Row(
-                        children: [
-                          Icon(Icons.attach_money, color: Colors.green.shade700, size: 18),
-                          const SizedBox(width: 8),
-                          const Text(
-                            'Efectivo (pago contra entrega/recogida)',
-                            style: TextStyle(fontSize: 14),
-                          ),
-                        ],
-                      ),
-                    if (!_acceptsSinpe && !_acceptsCash)
-                      const Text(
-                        'No se especificaron métodos de pago',
-                        style: TextStyle(color: Colors.grey, fontSize: 14),
-                      ),
-                  ],
-                ),
-              ),
-            ],
-
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
                 Text(
-                  'Total (${_cartService.itemCount} items):',
+                  '₡${widget.sellerCart.totalPrice.toStringAsFixed(2)}',
                   style: const TextStyle(
                     fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  _cartService.formattedTotalPrice,
-                  style: const TextStyle(
-                    fontSize: 22,
                     fontWeight: FontWeight.bold,
                     color: Colors.green,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                onPressed: () {
-                  if (_deliveryMethod == 'delivery' &&
-                      _addressController.text.trim().isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                            'Por favor ingresa la dirección de entrega'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                    return;
-                  }
+          ),
 
-                  if (_deliveryMethod == 'delivery' &&
-                      (_deliveryLatitude == null || _deliveryLongitude == null)) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                            'Por favor selecciona la ubicación de entrega en el mapa'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                    return;
-                  }
+          // Products List
+          ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: widget.sellerCart.items.length,
+            itemBuilder: (context, index) {
+              return _CartItemCard(
+                item: widget.sellerCart.items[index],
+                onQuantityChanged: (newQuantity) async {
+                  await _cartService.updateQuantity(
+                    widget.sellerCart.items[index].product.id,
+                    newQuantity,
+                  );
+                  widget.onUpdate();
+                },
+                onRemove: () async {
+                  await _cartService.removeItem(
+                    widget.sellerCart.items[index].product.id,
+                  );
+                  widget.onUpdate();
+                },
+              );
+            },
+          ),
 
-                  // Navigate to checkout
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => CheckoutScreen(
-                        deliveryMethod: _deliveryMethod,
-                        deliveryAddress: _deliveryMethod == 'delivery' ? _addressController.text : null,
-                        deliveryLatitude: _deliveryMethod == 'delivery' ? _deliveryLatitude : null,
-                        deliveryLongitude: _deliveryMethod == 'delivery' ? _deliveryLongitude : null,
-                        pickupAddress: _deliveryMethod == 'pickup' ? _sellerAddress : null,
-                        pickupLatitude: _deliveryMethod == 'pickup' ? _pickupLatitude : null,
-                        pickupLongitude: _deliveryMethod == 'pickup' ? _pickupLongitude : null,
-                        sellerBusinessName: _sellerBusinessName,
+          // Available Methods Info
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.blue.shade50,
+              border: Border(
+                top: BorderSide(color: Colors.grey.shade200),
+                bottom: BorderSide(color: Colors.grey.shade200),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.info_outline, color: Colors.blue.shade700, size: 20),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Métodos disponibles para este vendedor:',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blue.shade700,
                       ),
                     ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  foregroundColor: Colors.white,
+                  ],
                 ),
-                child: const Text(
-                  'Proceder al pago',
-                  style: TextStyle(fontSize: 18),
+                const SizedBox(height: 12),
+
+                // Payment Methods
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    if (widget.sellerCart.availablePaymentMethods.contains('SINPE'))
+                      Chip(
+                        avatar: const Icon(Icons.phone_android, size: 16),
+                        label: const Text('SINPE Móvil'),
+                        backgroundColor: Colors.green.shade100,
+                      ),
+                    if (widget.sellerCart.availablePaymentMethods.contains('CASH'))
+                      Chip(
+                        avatar: const Icon(Icons.attach_money, size: 16),
+                        label: const Text('Efectivo'),
+                        backgroundColor: Colors.green.shade100,
+                      ),
+                    if (widget.sellerCart.availablePaymentMethods.isEmpty)
+                      Chip(
+                        avatar: const Icon(Icons.warning, size: 16),
+                        label: const Text('Sin métodos de pago compatibles'),
+                        backgroundColor: Colors.red.shade100,
+                      ),
+                  ],
                 ),
+                const SizedBox(height: 8),
+
+                // Delivery Methods
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    if (widget.sellerCart.availableDeliveryMethods.contains('PICKUP'))
+                      Chip(
+                        avatar: const Icon(Icons.store, size: 16),
+                        label: const Text('Recoger en tienda'),
+                        backgroundColor: Colors.blue.shade100,
+                      ),
+                    if (widget.sellerCart.availableDeliveryMethods.contains('DELIVERY'))
+                      Chip(
+                        avatar: const Icon(Icons.local_shipping, size: 16),
+                        label: const Text('Entrega a domicilio'),
+                        backgroundColor: Colors.blue.shade100,
+                      ),
+                    if (widget.sellerCart.availableDeliveryMethods.isEmpty)
+                      Chip(
+                        avatar: const Icon(Icons.warning, size: 16),
+                        label: const Text('Sin métodos de entrega compatibles'),
+                        backgroundColor: Colors.red.shade100,
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          // Delivery Selection & Checkout
+          if (!_isLoadingInfo) ...[
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Método de entrega:',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Delivery method selector
+                  Row(
+                    children: [
+                      if (widget.sellerCart.availableDeliveryMethods.contains('PICKUP'))
+                        Expanded(
+                          child: RadioListTile<String>(
+                            title: const Text('Recoger'),
+                            value: 'pickup',
+                            groupValue: _deliveryMethod,
+                            onChanged: (value) {
+                              setState(() {
+                                _deliveryMethod = value!;
+                              });
+                            },
+                            dense: true,
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                        ),
+                      if (widget.sellerCart.availableDeliveryMethods.contains('DELIVERY'))
+                        Expanded(
+                          child: RadioListTile<String>(
+                            title: const Text('Entrega'),
+                            value: 'delivery',
+                            groupValue: _deliveryMethod,
+                            onChanged: (value) {
+                              setState(() {
+                                _deliveryMethod = value!;
+                              });
+                            },
+                            dense: true,
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                        ),
+                    ],
+                  ),
+
+                  // Address field for delivery
+                  if (_deliveryMethod == 'delivery') ...[
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _addressController,
+                      decoration: const InputDecoration(
+                        labelText: 'Dirección de entrega',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.location_on),
+                      ),
+                      maxLines: 2,
+                    ),
+                  ],
+
+                  const SizedBox(height: 16),
+
+                  // Checkout Button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: _goToCheckout,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        foregroundColor: Colors.white,
+                      ),
+                      child: Text(
+                        'Proceder al pago - ₡${widget.sellerCart.totalPrice.toStringAsFixed(2)}',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
-        ),
+        ],
       ),
     );
   }
 }
 
+/// Card para mostrar un item individual del carrito
 class _CartItemCard extends StatelessWidget {
   final CartItem item;
   final Function(int) onQuantityChanged;
@@ -507,35 +505,40 @@ class _CartItemCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Product image
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: Colors.grey[200],
-                borderRadius: BorderRadius.circular(8),
-              ),
+            // Product Image
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
               child: item.product.imageUrl != null
-                  ? ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.network(
-                        item.product.imageUrl!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return const Icon(Icons.image_not_supported);
-                        },
-                      ),
+                  ? Image.network(
+                      item.product.imageUrl!,
+                      width: 80,
+                      height: 80,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          width: 80,
+                          height: 80,
+                          color: Colors.grey[300],
+                          child: const Icon(Icons.image, size: 40),
+                        );
+                      },
                     )
-                  : const Icon(Icons.shopping_bag, size: 40),
+                  : Container(
+                      width: 80,
+                      height: 80,
+                      color: Colors.grey[300],
+                      child: const Icon(Icons.shopping_bag, size: 40),
+                    ),
             ),
             const SizedBox(width: 12),
 
-            // Product info
+            // Product Info
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -543,78 +546,55 @@ class _CartItemCard extends StatelessWidget {
                   Text(
                     item.product.name,
                     style: const TextStyle(
-                      fontWeight: FontWeight.bold,
                       fontSize: 16,
+                      fontWeight: FontWeight.bold,
                     ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
                   Text(
                     item.product.formattedPrice,
-                    style: const TextStyle(
-                      color: Colors.green,
+                    style: TextStyle(
                       fontSize: 14,
+                      color: Colors.grey[600],
                     ),
                   ),
                   const SizedBox(height: 8),
+
+                  // Quantity Controls
                   Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Quantity controls
-                      Container(
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey[300]!),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.remove, size: 18),
-                              onPressed: () {
-                                if (item.quantity > 1) {
-                                  onQuantityChanged(item.quantity - 1);
-                                }
-                              },
-                              constraints: const BoxConstraints(
-                                minWidth: 32,
-                                minHeight: 32,
-                              ),
-                              padding: EdgeInsets.zero,
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12),
-                              child: Text(
-                                '${item.quantity}',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
-                              ),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.add, size: 18),
-                              onPressed: () {
-                                if (item.quantity < item.product.stock) {
-                                  onQuantityChanged(item.quantity + 1);
-                                }
-                              },
-                              constraints: const BoxConstraints(
-                                minWidth: 32,
-                                minHeight: 32,
-                              ),
-                              padding: EdgeInsets.zero,
-                            ),
-                          ],
+                      IconButton(
+                        onPressed: () {
+                          if (item.quantity > 1) {
+                            onQuantityChanged(item.quantity - 1);
+                          }
+                        },
+                        icon: const Icon(Icons.remove_circle_outline),
+                        iconSize: 24,
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        child: Text(
+                          '${item.quantity}',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
-                      const Spacer(),
-                      // Total price
-                      Text(
-                        item.formattedTotalPrice,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
+                      IconButton(
+                        onPressed: () {
+                          if (item.quantity < item.product.stock) {
+                            onQuantityChanged(item.quantity + 1);
+                          }
+                        },
+                        icon: const Icon(Icons.add_circle_outline),
+                        iconSize: 24,
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
                       ),
                     ],
                   ),
@@ -622,36 +602,27 @@ class _CartItemCard extends StatelessWidget {
               ),
             ),
 
-            // Remove button
-            IconButton(
-              icon: const Icon(Icons.delete_outline, color: Colors.red),
-              onPressed: () {
-                showDialog(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: const Text('Eliminar producto'),
-                    content: Text(
-                      '¿Deseas eliminar "${item.product.name}" del carrito?',
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        child: const Text('Cancelar'),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          onRemove();
-                          Navigator.of(context).pop();
-                        },
-                        child: const Text(
-                          'Eliminar',
-                          style: TextStyle(color: Colors.red),
-                        ),
-                      ),
-                    ],
+            // Price and Remove
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                IconButton(
+                  onPressed: onRemove,
+                  icon: const Icon(Icons.delete_outline),
+                  color: Colors.red,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '₡${item.totalPrice.toStringAsFixed(2)}',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green,
                   ),
-                );
-              },
+                ),
+              ],
             ),
           ],
         ),
