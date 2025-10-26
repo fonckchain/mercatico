@@ -141,10 +141,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       // Add delivery information if applicable
       if (widget.deliveryMethod == 'delivery') {
         orderData['delivery_address'] = widget.deliveryAddress ?? '';
-        if (widget.deliveryLatitude != null && widget.deliveryLongitude != null) {
-          orderData['delivery_latitude'] = widget.deliveryLatitude!.toStringAsFixed(6);
-          orderData['delivery_longitude'] = widget.deliveryLongitude!.toStringAsFixed(6);
-        }
+        // Note: GPS coordinates are stored in buyer profile, not in order
       }
 
       // Create order via API
