@@ -32,6 +32,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
   bool _offersPickup = true;
   bool _offersDelivery = false;
   bool _acceptsCash = true; // Valor predeterminado, se cargará del perfil del vendedor
+  bool _acceptsSinpe = true; // Valor predeterminado, se cargará del perfil del vendedor
   bool _isLoading = false;
   bool _loadingCategories = true;
   String? _errorMessage;
@@ -92,6 +93,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         _offersPickup = productData['offers_pickup'] ?? true;
         _offersDelivery = productData['offers_delivery'] ?? false;
         _acceptsCash = productData['accepts_cash'] ?? true;
+        _acceptsSinpe = productData['accepts_sinpe'] ?? true;
 
         // Parse GPS coordinates
         if (productData['latitude'] != null) {
@@ -174,6 +176,8 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
             : null;
         // Cargar valor predeterminado de accepts_cash del perfil del vendedor
         _acceptsCash = profile['accepts_cash'] ?? true;
+        // Cargar valor predeterminado de accepts_sinpe (true si tiene número SINPE configurado)
+        _acceptsSinpe = profile['sinpe_number'] != null && profile['sinpe_number'].toString().isNotEmpty;
         _loadingSellerLocation = false;
       });
     } catch (e) {
@@ -240,6 +244,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         'category': _selectedCategoryId,  // Send category UUID
         'is_available': _isActive,  // Backend expects 'is_available' not 'is_active'
         'accepts_cash': _acceptsCash,  // Valor del switch
+        'accepts_sinpe': _acceptsSinpe,  // Valor del switch
         'offers_pickup': _offersPickup,
         'offers_delivery': _offersDelivery,
         'images': _existingImageUrls,  // Mantener imágenes existentes
@@ -632,6 +637,21 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                 onChanged: (value) {
                   setState(() {
                     _acceptsCash = value;
+                  });
+                },
+                activeColor: Colors.green,
+              ),
+
+              // Acepta SINPE Móvil
+              SwitchListTile(
+                title: const Text('Acepta SINPE Móvil'),
+                subtitle: const Text(
+                  'El comprador puede pagar con SINPE Móvil',
+                ),
+                value: _acceptsSinpe,
+                onChanged: (value) {
+                  setState(() {
+                    _acceptsSinpe = value;
                   });
                 },
                 activeColor: Colors.green,

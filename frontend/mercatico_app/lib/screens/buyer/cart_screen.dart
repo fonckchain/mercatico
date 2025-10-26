@@ -29,6 +29,11 @@ class _CartScreenState extends State<CartScreen> {
   double? _pickupLatitude;
   double? _pickupLongitude;
 
+  // Payment methods accepted (from first product in cart)
+  bool _acceptsCash = false;
+  bool _acceptsSinpe = false;
+  String? _sinpeNumber;
+
   bool _isLoadingLocations = true;
 
   @override
@@ -59,14 +64,14 @@ class _CartScreenState extends State<CartScreen> {
         }
       }
 
-      // Load seller's pickup location from first cart item
+      // Load seller's pickup location and payment info from first cart item
       if (_cartService.items.isNotEmpty) {
         final firstProduct = _cartService.items.first.product;
         final sellerId = firstProduct.sellerId;
 
         if (sellerId != null) {
-          final sellerData = await _apiService.getProduct(firstProduct.id);
-          final sellerInfo = sellerData['seller_info'];
+          final productData = await _apiService.getProduct(firstProduct.id);
+          final sellerInfo = productData['seller_info'];
 
           if (sellerInfo != null) {
             _sellerBusinessName = sellerInfo['business_name'];
@@ -77,7 +82,14 @@ class _CartScreenState extends State<CartScreen> {
             if (sellerInfo['longitude'] != null) {
               _pickupLongitude = double.tryParse(sellerInfo['longitude'].toString());
             }
+
+            // Load SINPE number from seller profile
+            _sinpeNumber = sellerInfo['sinpe_number'];
           }
+
+          // Load payment methods from product
+          _acceptsCash = productData['accepts_cash'] ?? false;
+          _acceptsSinpe = productData['accepts_sinpe'] ?? false;
         }
       }
 
@@ -332,6 +344,66 @@ class _CartScreenState extends State<CartScreen> {
                 ),
                 style: OutlinedButton.styleFrom(
                   minimumSize: const Size(double.infinity, 40),
+                ),
+              ),
+            ],
+
+            // Payment Methods Accepted Section
+            if (!_isLoadingLocations) ...[
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  border: Border.all(color: Colors.blue.shade200),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.payment, color: Colors.blue.shade700, size: 20),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Métodos de pago aceptados:',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blue.shade700,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    if (_acceptsSinpe && _sinpeNumber != null && _sinpeNumber!.isNotEmpty)
+                      Row(
+                        children: [
+                          Icon(Icons.phone_android, color: Colors.green.shade700, size: 18),
+                          const SizedBox(width: 8),
+                          Text(
+                            'SINPE Móvil: $_sinpeNumber',
+                            style: const TextStyle(fontSize: 14),
+                          ),
+                        ],
+                      ),
+                    if (_acceptsSinpe && _acceptsCash) const SizedBox(height: 4),
+                    if (_acceptsCash)
+                      Row(
+                        children: [
+                          Icon(Icons.attach_money, color: Colors.green.shade700, size: 18),
+                          const SizedBox(width: 8),
+                          const Text(
+                            'Efectivo (pago contra entrega/recogida)',
+                            style: TextStyle(fontSize: 14),
+                          ),
+                        ],
+                      ),
+                    if (!_acceptsSinpe && !_acceptsCash)
+                      const Text(
+                        'No se especificaron métodos de pago',
+                        style: TextStyle(color: Colors.grey, fontSize: 14),
+                      ),
+                  ],
                 ),
               ),
             ],

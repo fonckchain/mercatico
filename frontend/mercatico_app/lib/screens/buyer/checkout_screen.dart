@@ -57,12 +57,17 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         final sellerInfo = productData['seller_info'];
 
         setState(() {
-          // accepts_cash viene del producto (configuración por producto)
+          // accepts_cash y accepts_sinpe vienen del producto (configuración por producto)
           _sellerAcceptsCash = productData['accepts_cash'] ?? false;
+          final productAcceptsSinpe = productData['accepts_sinpe'] ?? false;
 
           // sinpe_number viene del perfil del vendedor (es global)
           _sellerSinpeNumber = sellerInfo?['sinpe_number'];
-          _sellerAcceptsSinpe = _sellerSinpeNumber != null && _sellerSinpeNumber!.isNotEmpty;
+
+          // Solo acepta SINPE si el producto lo acepta Y el vendedor tiene número SINPE
+          _sellerAcceptsSinpe = productAcceptsSinpe &&
+                                _sellerSinpeNumber != null &&
+                                _sellerSinpeNumber!.isNotEmpty;
 
           // Set default payment method
           if (_sellerAcceptsSinpe) {

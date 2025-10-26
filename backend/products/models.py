@@ -92,6 +92,11 @@ class Product(models.Model):
         default=True,
         help_text='Si el vendedor acepta pago en efectivo para este producto'
     )
+    accepts_sinpe = models.BooleanField(
+        'acepta SINPE Móvil',
+        default=True,
+        help_text='Si el vendedor acepta SINPE Móvil para este producto'
+    )
 
     # Delivery options
     offers_pickup = models.BooleanField(
