@@ -232,12 +232,7 @@ class _SellerCartSectionState extends State<_SellerCartSection> {
   }
 
   Future<void> _openLocationInMap() async {
-    print('_openLocationInMap called');
-    print('_pickupLatitude: $_pickupLatitude');
-    print('_pickupLongitude: $_pickupLongitude');
-
     if (_pickupLatitude == null || _pickupLongitude == null) {
-      print('No coordinates available');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Ubicación no disponible'),
@@ -251,7 +246,6 @@ class _SellerCartSectionState extends State<_SellerCartSection> {
     final url = Uri.parse(
       'https://www.google.com/maps/search/?api=1&query=$_pickupLatitude,$_pickupLongitude'
     );
-    print('Opening URL: $url');
 
     try {
       if (await canLaunchUrl(url)) {
@@ -500,13 +494,8 @@ class _SellerCartSectionState extends State<_SellerCartSection> {
                     GestureDetector(
                       behavior: HitTestBehavior.opaque,
                       onTap: _pickupLatitude != null && _pickupLongitude != null
-                          ? () {
-                              print('Card tapped! Opening map...');
-                              _openLocationInMap();
-                            }
-                          : () {
-                              print('Card tapped but no coordinates');
-                            },
+                          ? _openLocationInMap
+                          : null,
                       child: Card(
                         color: Colors.blue.shade50,
                         child: Padding(
