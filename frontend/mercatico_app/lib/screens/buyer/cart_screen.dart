@@ -445,17 +445,106 @@ class _SellerCartSectionState extends State<_SellerCartSection> {
                     ],
                   ),
 
+                  const SizedBox(height: 12),
+
+                  // Pickup location info
+                  if (_deliveryMethod == 'pickup') ...[
+                    Card(
+                      color: Colors.blue.shade50,
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(Icons.store, color: Colors.blue.shade700, size: 20),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Ubicación de recogida:',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.blue.shade700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            if (_sellerAddress != null && _sellerAddress!.isNotEmpty) ...[
+                              Text(_sellerAddress!),
+                              const SizedBox(height: 4),
+                            ],
+                            if (_pickupLatitude != null && _pickupLongitude != null)
+                              Text(
+                                'GPS: ${_pickupLatitude!.toStringAsFixed(6)}, ${_pickupLongitude!.toStringAsFixed(6)}',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey.shade600,
+                                ),
+                              ),
+                            if ((_sellerAddress == null || _sellerAddress!.isEmpty) &&
+                                _pickupLatitude == null)
+                              Text(
+                                'El vendedor no ha configurado una ubicación de recogida',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.orange.shade700,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+
                   // Address field for delivery
                   if (_deliveryMethod == 'delivery') ...[
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: _addressController,
-                      decoration: const InputDecoration(
-                        labelText: 'Dirección de entrega',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.location_on),
+                    Card(
+                      color: Colors.green.shade50,
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(Icons.local_shipping, color: Colors.green.shade700, size: 20),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Dirección de entrega:',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.green.shade700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            TextField(
+                              controller: _addressController,
+                              decoration: const InputDecoration(
+                                labelText: 'Confirma o edita tu dirección',
+                                border: OutlineInputBorder(),
+                                prefixIcon: Icon(Icons.location_on),
+                                filled: true,
+                                fillColor: Colors.white,
+                              ),
+                              maxLines: 2,
+                            ),
+                            if (_deliveryLatitude != null && _deliveryLongitude != null) ...[
+                              const SizedBox(height: 8),
+                              Text(
+                                'GPS: ${_deliveryLatitude!.toStringAsFixed(6)}, ${_deliveryLongitude!.toStringAsFixed(6)}',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey.shade600,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
                       ),
-                      maxLines: 2,
                     ),
                   ],
 

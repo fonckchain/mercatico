@@ -83,8 +83,6 @@ class ProductSerializer(serializers.ModelSerializer):
             'offers_delivery',
             'is_available',
             'images',
-            'latitude',
-            'longitude',
             'main_image',
             'is_in_stock',
             'views_count',

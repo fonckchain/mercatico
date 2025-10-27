@@ -118,24 +118,6 @@ class Product(models.Model):
         help_text='Array de URLs de imágenes (máximo 5)'
     )
 
-    # Location (GPS coordinates)
-    latitude = models.DecimalField(
-        'latitud',
-        max_digits=9,
-        decimal_places=6,
-        null=True,
-        blank=True,
-        help_text='Coordenada de latitud GPS del producto'
-    )
-    longitude = models.DecimalField(
-        'longitud',
-        max_digits=9,
-        decimal_places=6,
-        null=True,
-        blank=True,
-        help_text='Coordenada de longitud GPS del producto'
-    )
-
     # Statistics
     views_count = models.IntegerField('vistas', default=0)
     sales_count = models.IntegerField('ventas', default=0)
