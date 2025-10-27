@@ -336,28 +336,6 @@ class ApiService {
     return response.data;
   }
 
-  /// Obtener mis ventas
-  Future<Map<String, dynamic>> getMySales() async {
-    final response = await _dio.get(ApiConstants.mySales);
-    return response.data;
-  }
-
-  /// Actualizar estado de orden
-  Future<Map<String, dynamic>> updateOrderStatus(
-    String orderId,
-    String status, {
-    String? notes,
-  }) async {
-    final response = await _dio.post(
-      ApiConstants.orderUpdateStatus(orderId),
-      data: {
-        'status': status,
-        if (notes != null) 'notes': notes,
-      },
-    );
-    return response.data;
-  }
-
   // ==================== PAYMENTS ====================
 
   /// Subir comprobante de pago
