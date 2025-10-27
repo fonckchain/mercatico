@@ -74,13 +74,25 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         _sellerAcceptsCash = availablePayments.contains('CASH');
         _sellerAcceptsSinpe = availablePayments.contains('SINPE');
 
+        print('=== CHECKOUT DEBUG ===');
+        print('Available payment methods: $availablePayments');
+        print('_sellerAcceptsCash: $_sellerAcceptsCash');
+        print('_sellerAcceptsSinpe: $_sellerAcceptsSinpe');
+        print('sellerInfo: $sellerInfo');
+        print('sinpe_number: ${sellerInfo?['sinpe_number']}');
+
         // sinpe_number viene del perfil del vendedor (es global)
         _sellerSinpeNumber = sellerInfo?['sinpe_number'];
 
         // Verify SINPE has number
         if (_sellerAcceptsSinpe && (_sellerSinpeNumber == null || _sellerSinpeNumber!.isEmpty)) {
+          print('SINPE disabled: no sinpe_number configured');
           _sellerAcceptsSinpe = false;
         }
+
+        print('Final _sellerAcceptsCash: $_sellerAcceptsCash');
+        print('Final _sellerAcceptsSinpe: $_sellerAcceptsSinpe');
+        print('======================');
 
         // Set default payment method
         if (_sellerAcceptsSinpe) {
