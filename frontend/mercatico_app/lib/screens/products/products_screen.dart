@@ -6,6 +6,7 @@ import '../../models/product.dart';
 import '../buyer/product_detail_screen.dart';
 import '../buyer/cart_screen.dart';
 import '../buyer/buyer_profile_screen.dart';
+import '../buyer/purchase_history_screen.dart';
 
 class ProductsScreen extends StatefulWidget {
   const ProductsScreen({super.key});
@@ -90,6 +91,18 @@ class _ProductsScreenState extends State<ProductsScreen> {
               );
               // Refresh to update badge count
               setState(() {});
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.receipt_long),
+            tooltip: 'Mis Compras',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const PurchaseHistoryScreen(),
+                ),
+              );
             },
           ),
           IconButton(
