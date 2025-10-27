@@ -126,18 +126,7 @@ class _SalesHistoryScreenState extends State<SalesHistoryScreen> {
                   Navigator.pop(context);
                   final telUrl = Uri.parse('tel:$cleanPhone');
                   try {
-                    if (await canLaunchUrl(telUrl)) {
-                      await launchUrl(telUrl);
-                    } else {
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('No se pudo realizar la llamada'),
-                            backgroundColor: Colors.red,
-                          ),
-                        );
-                      }
-                    }
+                    await launchUrl(telUrl, mode: LaunchMode.externalApplication);
                   } catch (e) {
                     if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
