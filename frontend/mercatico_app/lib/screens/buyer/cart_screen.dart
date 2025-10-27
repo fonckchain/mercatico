@@ -3,6 +3,7 @@ import '../../core/services/cart_service.dart';
 import '../../core/services/api_service.dart';
 import '../../models/cart_item.dart';
 import 'checkout_screen.dart';
+import 'map_location_picker_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class CartScreen extends StatefulWidget {
@@ -138,14 +139,24 @@ class _SellerCartSectionState extends State<_SellerCartSection> {
       final userData = await _apiService.getCurrentUser();
       final buyerProfile = userData['buyer_profile'];
 
+      print('DEBUG - Buyer profile data: $buyerProfile');
+
       if (buyerProfile != null) {
         _addressController.text = buyerProfile['address'] ?? '';
         if (buyerProfile['latitude'] != null) {
           _deliveryLatitude = double.tryParse(buyerProfile['latitude'].toString());
+          print('DEBUG - Delivery latitude parsed: $_deliveryLatitude');
+        } else {
+          print('DEBUG - Buyer profile latitude is null');
         }
         if (buyerProfile['longitude'] != null) {
           _deliveryLongitude = double.tryParse(buyerProfile['longitude'].toString());
+          print('DEBUG - Delivery longitude parsed: $_deliveryLongitude');
+        } else {
+          print('DEBUG - Buyer profile longitude is null');
         }
+      } else {
+        print('DEBUG - Buyer profile is null');
       }
 
       // Load seller info from first product
@@ -154,17 +165,27 @@ class _SellerCartSectionState extends State<_SellerCartSection> {
         final productData = await _apiService.getProduct(firstProduct.id);
         final sellerInfo = productData['seller_info'];
 
+        print('DEBUG - Seller info data: $sellerInfo');
+
         if (sellerInfo != null) {
           _sellerAddress = sellerInfo['address'];
           if (sellerInfo['latitude'] != null) {
             _pickupLatitude = double.tryParse(sellerInfo['latitude'].toString());
+            print('DEBUG - Pickup latitude parsed: $_pickupLatitude');
+          } else {
+            print('DEBUG - Seller latitude is null');
           }
           if (sellerInfo['longitude'] != null) {
             _pickupLongitude = double.tryParse(sellerInfo['longitude'].toString());
+            print('DEBUG - Pickup longitude parsed: $_pickupLongitude');
+          } else {
+            print('DEBUG - Seller longitude is null');
           }
           _sinpeNumber = sellerInfo['sinpe_number'];
         }
       }
+
+      print('DEBUG - Final coordinates: pickup($_pickupLatitude, $_pickupLongitude), delivery($_deliveryLatitude, $_deliveryLongitude)');
 
       setState(() {
         _isLoadingInfo = false;
@@ -172,6 +193,7 @@ class _SellerCartSectionState extends State<_SellerCartSection> {
 
       // Calculate delivery cost if delivery method is selected and we have coordinates
       if (_deliveryMethod == 'delivery') {
+        print('DEBUG - Attempting to calculate delivery cost...');
         _calculateDeliveryCost();
       }
     } catch (e) {
@@ -183,8 +205,15 @@ class _SellerCartSectionState extends State<_SellerCartSection> {
   }
 
   Future<void> _calculateDeliveryCost() async {
+    print('DEBUG - _calculateDeliveryCost called');
+    print('DEBUG - Pickup: ($_pickupLatitude, $_pickupLongitude)');
+    print('DEBUG - Delivery: ($_deliveryLatitude, $_deliveryLongitude)');
+
     if (_pickupLatitude == null || _pickupLongitude == null ||
         _deliveryLatitude == null || _deliveryLongitude == null) {
+      print('DEBUG - Missing coordinates, cannot calculate cost');
+      print('DEBUG - Pickup null: ${_pickupLatitude == null || _pickupLongitude == null}');
+      print('DEBUG - Delivery null: ${_deliveryLatitude == null || _deliveryLongitude == null}');
       return;
     }
 
@@ -193,6 +222,7 @@ class _SellerCartSectionState extends State<_SellerCartSection> {
     });
 
     try {
+      print('DEBUG - Calling API to calculate delivery cost...');
       final result = await _apiService.calculateDeliveryCost(
         sellerLatitude: _pickupLatitude.toString(),
         sellerLongitude: _pickupLongitude.toString(),
@@ -200,11 +230,16 @@ class _SellerCartSectionState extends State<_SellerCartSection> {
         buyerLongitude: _deliveryLongitude.toString(),
       );
 
+      print('DEBUG - API result: $result');
+
       setState(() {
         _distance = double.tryParse(result['distance_km'].toString());
         _deliveryFee = double.tryParse(result['delivery_fee'].toString());
         _isCalculatingCost = false;
       });
+
+      print('DEBUG - Parsed distance: $_distance km');
+      print('DEBUG - Parsed delivery fee: ₡$_deliveryFee');
     } catch (e) {
       print('Error calculating delivery cost: $e');
       setState(() {
@@ -315,41 +350,38 @@ class _SellerCartSectionState extends State<_SellerCartSection> {
     }
   }
 
-  Future<void> _openDeliveryLocationInMap() async {
-    if (_deliveryLatitude == null || _deliveryLongitude == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Ubicación de entrega no disponible'),
-          backgroundColor: Colors.orange,
+  Future<void> _openDeliveryLocationPicker() async {
+    // Open map picker to select/change delivery location
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => MapLocationPickerScreen(
+          initialLatitude: _deliveryLatitude,
+          initialLongitude: _deliveryLongitude,
+          initialAddress: _addressController.text,
         ),
-      );
-      return;
-    }
-
-    // Create Google Maps URL
-    final url = Uri.parse(
-      'https://www.google.com/maps/search/?api=1&query=$_deliveryLatitude,$_deliveryLongitude'
+      ),
     );
 
-    try {
-      if (await canLaunchUrl(url)) {
-        await launchUrl(url, mode: LaunchMode.externalApplication);
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('No se pudo abrir el mapa'),
-              backgroundColor: Colors.red,
-            ),
-          );
+    if (result != null && result is Map<String, dynamic>) {
+      setState(() {
+        _deliveryLatitude = result['latitude'];
+        _deliveryLongitude = result['longitude'];
+        if (result['address'] != null && result['address'].toString().isNotEmpty) {
+          _addressController.text = result['address'];
         }
+      });
+
+      // Recalculate delivery cost with new location
+      if (_deliveryMethod == 'delivery') {
+        _calculateDeliveryCost();
       }
-    } catch (e) {
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error al abrir el mapa: $e'),
-            backgroundColor: Colors.red,
+          const SnackBar(
+            content: Text('Ubicación de entrega actualizada'),
+            backgroundColor: Colors.green,
           ),
         );
       }
@@ -686,53 +718,55 @@ class _SellerCartSectionState extends State<_SellerCartSection> {
                               ),
                               maxLines: 2,
                             ),
-                            if (_deliveryLatitude != null && _deliveryLongitude != null) ...[
-                              const SizedBox(height: 12),
-                              GestureDetector(
-                                behavior: HitTestBehavior.opaque,
-                                onTap: _openDeliveryLocationInMap,
-                                child: Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(color: Colors.green.shade300),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Icon(Icons.map, color: Colors.green.shade700, size: 20),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              'Ver ubicación en el mapa',
-                                              style: TextStyle(
-                                                fontWeight: FontWeight.w500,
-                                                color: Colors.green.shade700,
-                                              ),
+                            const SizedBox(height: 12),
+                            GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: _openDeliveryLocationPicker,
+                              child: Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: Colors.green.shade300),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.edit_location, color: Colors.green.shade700, size: 20),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            _deliveryLatitude != null && _deliveryLongitude != null
+                                                ? 'Cambiar ubicación de entrega'
+                                                : 'Seleccionar ubicación de entrega',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.w500,
+                                              color: Colors.green.shade700,
                                             ),
-                                            const SizedBox(height: 2),
-                                            Text(
-                                              'GPS: ${_deliveryLatitude!.toStringAsFixed(6)}, ${_deliveryLongitude!.toStringAsFixed(6)}',
-                                              style: TextStyle(
-                                                fontSize: 11,
-                                                color: Colors.grey.shade600,
-                                              ),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            _deliveryLatitude != null && _deliveryLongitude != null
+                                                ? 'GPS: ${_deliveryLatitude!.toStringAsFixed(6)}, ${_deliveryLongitude!.toStringAsFixed(6)}'
+                                                : 'Toca para seleccionar en el mapa',
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              color: Colors.grey.shade600,
                                             ),
-                                          ],
-                                        ),
+                                          ),
+                                        ],
                                       ),
-                                      Icon(Icons.arrow_forward_ios,
-                                        color: Colors.green.shade700,
-                                        size: 16
-                                      ),
-                                    ],
-                                  ),
+                                    ),
+                                    Icon(Icons.arrow_forward_ios,
+                                      color: Colors.green.shade700,
+                                      size: 16
+                                    ),
+                                  ],
                                 ),
                               ),
-                            ],
+                            ),
                           ],
                         ),
                       ),
