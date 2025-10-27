@@ -3,6 +3,7 @@ import '../../core/services/cart_service.dart';
 import '../../core/services/api_service.dart';
 import '../../models/cart_item.dart';
 import 'checkout_screen.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class CartScreen extends StatefulWidget {
   const CartScreen({super.key});
@@ -230,6 +231,47 @@ class _SellerCartSectionState extends State<_SellerCartSection> {
     ).then((_) => widget.onUpdate());
   }
 
+  Future<void> _openLocationInMap() async {
+    if (_pickupLatitude == null || _pickupLongitude == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Ubicación no disponible'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    // Create Google Maps URL
+    final url = Uri.parse(
+      'https://www.google.com/maps/search/?api=1&query=$_pickupLatitude,$_pickupLongitude'
+    );
+
+    try {
+      if (await canLaunchUrl(url)) {
+        await launchUrl(url, mode: LaunchMode.externalApplication);
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('No se pudo abrir el mapa'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al abrir el mapa: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -350,7 +392,7 @@ class _SellerCartSectionState extends State<_SellerCartSection> {
                       ),
                     if (widget.sellerCart.availablePaymentMethods.contains('CASH'))
                       Chip(
-                        avatar: const Icon(Icons.attach_money, size: 16),
+                        avatar: const Text('₡', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                         label: const Text('Efectivo'),
                         backgroundColor: Colors.green.shade100,
                       ),
@@ -449,50 +491,74 @@ class _SellerCartSectionState extends State<_SellerCartSection> {
 
                   // Pickup location info
                   if (_deliveryMethod == 'pickup') ...[
-                    Card(
-                      color: Colors.blue.shade50,
-                      child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Icon(Icons.store, color: Colors.blue.shade700, size: 20),
-                                const SizedBox(width: 8),
+                    InkWell(
+                      onTap: _pickupLatitude != null && _pickupLongitude != null
+                          ? _openLocationInMap
+                          : null,
+                      borderRadius: BorderRadius.circular(8),
+                      child: Card(
+                        color: Colors.blue.shade50,
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(Icons.store, color: Colors.blue.shade700, size: 20),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      'Ubicación de recogida:',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.blue.shade700,
+                                      ),
+                                    ),
+                                  ),
+                                  if (_pickupLatitude != null && _pickupLongitude != null)
+                                    Icon(
+                                      Icons.map,
+                                      color: Colors.blue.shade700,
+                                      size: 20,
+                                    ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              if (_sellerAddress != null && _sellerAddress!.isNotEmpty) ...[
+                                Text(_sellerAddress!),
+                                const SizedBox(height: 4),
+                              ],
+                              if (_pickupLatitude != null && _pickupLongitude != null) ...[
                                 Text(
-                                  'Ubicación de recogida:',
+                                  'GPS: ${_pickupLatitude!.toStringAsFixed(6)}, ${_pickupLongitude!.toStringAsFixed(6)}',
                                   style: TextStyle(
-                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Toca para ver en el mapa',
+                                  style: TextStyle(
+                                    fontSize: 12,
                                     color: Colors.blue.shade700,
+                                    fontWeight: FontWeight.w500,
                                   ),
                                 ),
                               ],
-                            ),
-                            const SizedBox(height: 8),
-                            if (_sellerAddress != null && _sellerAddress!.isNotEmpty) ...[
-                              Text(_sellerAddress!),
-                              const SizedBox(height: 4),
+                              if ((_sellerAddress == null || _sellerAddress!.isEmpty) &&
+                                  _pickupLatitude == null)
+                                Text(
+                                  'El vendedor no ha configurado una ubicación de recogida',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.orange.shade700,
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                                ),
                             ],
-                            if (_pickupLatitude != null && _pickupLongitude != null)
-                              Text(
-                                'GPS: ${_pickupLatitude!.toStringAsFixed(6)}, ${_pickupLongitude!.toStringAsFixed(6)}',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey.shade600,
-                                ),
-                              ),
-                            if ((_sellerAddress == null || _sellerAddress!.isEmpty) &&
-                                _pickupLatitude == null)
-                              Text(
-                                'El vendedor no ha configurado una ubicación de recogida',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.orange.shade700,
-                                  fontStyle: FontStyle.italic,
-                                ),
-                              ),
-                          ],
+                          ),
                         ),
                       ),
                     ),

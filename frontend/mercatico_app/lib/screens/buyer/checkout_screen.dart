@@ -433,7 +433,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                 ? 'Pagar al recoger el pedido'
                                 : 'Pagar contra entrega',
                           ),
-                          secondary: const Icon(Icons.attach_money, color: Colors.green),
+                          secondary: const Text(
+                            '₡',
+                            style: TextStyle(
+                              fontSize: 32,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.green,
+                            ),
+                          ),
                         ),
                       ),
                   ],
