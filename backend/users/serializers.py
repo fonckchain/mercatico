@@ -59,6 +59,7 @@ class UserSerializer(serializers.ModelSerializer):
     buyer_profile = BuyerProfileSerializer(required=False, allow_null=True)
     seller_profile = SellerProfileSerializer(required=False, allow_null=True)
     full_name = serializers.CharField(source='get_full_name', read_only=True)
+    business_name = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -69,13 +70,20 @@ class UserSerializer(serializers.ModelSerializer):
             'first_name',
             'last_name',
             'full_name',
+            'business_name',
             'user_type',
             'is_verified',
             'date_joined',
             'buyer_profile',
             'seller_profile',
         ]
-        read_only_fields = ['id', 'is_verified', 'date_joined', 'full_name']
+        read_only_fields = ['id', 'is_verified', 'date_joined', 'full_name', 'business_name']
+
+    def get_business_name(self, obj):
+        """Get business name for sellers, None for buyers."""
+        if obj.user_type == User.UserType.SELLER and hasattr(obj, 'seller_profile'):
+            return obj.seller_profile.business_name
+        return None
 
     def to_representation(self, instance):
         """Include profile based on user type."""

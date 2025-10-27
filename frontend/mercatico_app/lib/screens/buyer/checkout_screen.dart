@@ -217,11 +217,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 const Text('Tu pedido ha sido creado exitosamente.'),
                 const SizedBox(height: 16),
                 if (_paymentMethod == 'sinpe') ...[
-                  const Text(
-                    'Por favor realiza el pago SINPE Móvil al número:',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
@@ -229,36 +224,34 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       border: Border.all(color: Colors.green.shade200),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          _sellerSinpeNumber!,
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        const Row(
+                          children: [
+                            Icon(Icons.check_circle, color: Colors.green, size: 20),
+                            SizedBox(width: 8),
+                            Text(
+                              'Comprobante de pago recibido',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.green,
+                              ),
+                            ),
+                          ],
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.copy),
-                          onPressed: () {
-                            Clipboard.setData(ClipboardData(text: _sellerSinpeNumber!));
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Número copiado')),
-                            );
-                          },
+                        const SizedBox(height: 8),
+                        const Text(
+                          'El vendedor verificará tu pago y confirmará tu pedido.',
+                          style: TextStyle(fontSize: 14),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Monto: ${_cartService.formattedTotalPrice}',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.green,
-                    ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Podrás ver el estado de tu pedido en "Mis Compras".',
+                    style: TextStyle(fontSize: 14),
                   ),
                 ] else if (_paymentMethod == 'cash') ...[
                   const Text(
