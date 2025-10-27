@@ -154,16 +154,34 @@ class OrderCreateSerializer(serializers.ModelSerializer):
 
     def validate_items(self, value):
         """Validate that items list is not empty."""
+        print(f"DEBUG - validate_items received type: {type(value)}")
+        print(f"DEBUG - validate_items received value: {value}")
+
         # If items comes as string (from FormData), parse it
         if isinstance(value, str):
             import json
             try:
                 value = json.loads(value)
-            except json.JSONDecodeError:
+                print(f"DEBUG - After JSON parse: {value}")
+            except json.JSONDecodeError as e:
+                print(f"DEBUG - JSON decode error: {e}")
+                raise serializers.ValidationError("Formato de items inválido")
+
+        # If items is a list and first element is a string, parse it
+        if isinstance(value, list) and len(value) > 0 and isinstance(value[0], str):
+            import json
+            try:
+                # The entire list is actually a JSON string in the first element
+                value = json.loads(value[0])
+                print(f"DEBUG - Parsed from list[0]: {value}")
+            except (json.JSONDecodeError, IndexError) as e:
+                print(f"DEBUG - Error parsing list[0]: {e}")
                 raise serializers.ValidationError("Formato de items inválido")
 
         if not value:
             raise serializers.ValidationError("Debe incluir al menos un producto")
+
+        print(f"DEBUG - Final validated items: {value}")
         return value
 
     def validate(self, data):
