@@ -1,10 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../core/services/api_service.dart';
 import '../../models/product.dart';
-import '../../widgets/location_picker.dart';
 import '../../widgets/image_picker_widget.dart';
 
 class ProductFormScreen extends StatefulWidget {
@@ -40,11 +38,6 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
   // Map category IDs to names, loaded dynamically from backend
   Map<String, String> _categories = {};
 
-  // GPS location
-  double? _latitude;
-  double? _longitude;
-  bool _loadingSellerLocation = true;
-
   // Images
   List<File> _selectedImageFiles = [];
   List<String> _existingImageUrls = [];
@@ -69,9 +62,6 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     // If editing, load full product details
     if (widget.product != null) {
       _loadProductDetails();
-    } else {
-      // If creating new product, load seller's default location
-      _loadSellerLocation();
     }
   }
 
@@ -95,14 +85,6 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         _acceptsCash = productData['accepts_cash'] ?? true;
         _acceptsSinpe = productData['accepts_sinpe'] ?? true;
 
-        // Parse GPS coordinates
-        if (productData['latitude'] != null) {
-          _latitude = double.tryParse(productData['latitude'].toString());
-        }
-        if (productData['longitude'] != null) {
-          _longitude = double.tryParse(productData['longitude'].toString());
-        }
-
         // Load existing images
         if (productData['images'] != null && productData['images'] is List) {
           _existingImageUrls = List<String>.from(productData['images']);
@@ -113,14 +95,11 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
           print('DEBUG: productData[images] = ${productData['images']}');
         }
 
-        _loadingSellerLocation = false;
-
         // Category will be set after categories are loaded in _loadCategories
       });
     } catch (e) {
       setState(() {
         _errorMessage = 'Error al cargar detalles del producto: $e';
-        _loadingSellerLocation = false;
       });
     }
   }
@@ -164,49 +143,6 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     }
   }
 
-  Future<void> _loadSellerLocation() async {
-    try {
-      final profile = await _apiService.getSellerProfile();
-      setState(() {
-        _latitude = profile['latitude'] != null
-            ? double.tryParse(profile['latitude'].toString())
-            : null;
-        _longitude = profile['longitude'] != null
-            ? double.tryParse(profile['longitude'].toString())
-            : null;
-        // Cargar valores predeterminados de métodos de pago del perfil del vendedor
-        _acceptsCash = profile['accepts_cash'] ?? true;
-        _acceptsSinpe = profile['accepts_sinpe'] ?? true;
-        _loadingSellerLocation = false;
-      });
-    } catch (e) {
-      setState(() {
-        _loadingSellerLocation = false;
-      });
-    }
-  }
-
-  Future<void> _openLocationPicker() async {
-    final initialLocation = (_latitude != null && _longitude != null)
-        ? LatLng(_latitude!, _longitude!)
-        : null;
-
-    await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => LocationPicker(
-          initialLocation: initialLocation,
-          onLocationSelected: (location, address) {
-            setState(() {
-              _latitude = location.latitude;
-              _longitude = location.longitude;
-            });
-          },
-        ),
-      ),
-    );
-  }
-
   @override
   void dispose() {
     _nameController.dispose();
@@ -248,13 +184,6 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         'offers_delivery': _offersDelivery,
         'images': _existingImageUrls,  // Mantener imágenes existentes
       };
-
-      // Only include GPS coordinates if they are not null
-      // Round to 6 decimal places to match backend validation
-      if (_latitude != null && _longitude != null) {
-        productData['latitude'] = _latitude!.toStringAsFixed(6);
-        productData['longitude'] = _longitude!.toStringAsFixed(6);
-      }
 
       String productId;
 
@@ -461,81 +390,6 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                     }
                     return null;
                   },
-                ),
-              const SizedBox(height: 16),
-
-              // Ubicación del producto
-              const Text(
-                'Ubicación del Producto',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Selecciona dónde se encuentra el producto',
-                style: TextStyle(fontSize: 12, color: Colors.grey),
-              ),
-              const SizedBox(height: 12),
-
-              // Location selector button
-              if (_loadingSellerLocation)
-                const Center(child: CircularProgressIndicator())
-              else
-                OutlinedButton.icon(
-                  onPressed: _openLocationPicker,
-                  icon: const Icon(Icons.map),
-                  label: Text(
-                    _latitude != null && _longitude != null
-                        ? 'Cambiar Ubicación'
-                        : 'Seleccionar Ubicación',
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.green,
-                    side: const BorderSide(color: Colors.green),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                  ),
-                ),
-              const SizedBox(height: 12),
-
-              // Display current location if set
-              if (_latitude != null && _longitude != null)
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.green[50],
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.green[200]!),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.check_circle, color: Colors.green[700]),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Ubicación seleccionada',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.green[700],
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Lat: ${_latitude!.toStringAsFixed(6)}, Lng: ${_longitude!.toStringAsFixed(6)}',
-                              style: const TextStyle(fontSize: 12),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
                 ),
               const SizedBox(height: 16),
 

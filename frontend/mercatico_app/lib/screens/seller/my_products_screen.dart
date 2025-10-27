@@ -281,8 +281,11 @@ class _ProductListItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(12),
+      child: InkWell(
+        onTap: onEdit,
+        borderRadius: BorderRadius.circular(12),
+        child: ListTile(
+          contentPadding: const EdgeInsets.all(12),
         leading: Container(
           width: 60,
           height: 60,
@@ -400,6 +403,7 @@ class _ProductListItem extends StatelessWidget {
               ),
             ),
           ],
+        ),
         ),
       ),
     );
