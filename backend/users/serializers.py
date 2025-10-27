@@ -273,6 +273,20 @@ class PublicSellerProfileSerializer(serializers.ModelSerializer):
     canton = serializers.CharField(source='seller_profile.canton')
     district = serializers.CharField(source='seller_profile.district')
     address = serializers.CharField(source='seller_profile.address')
+    latitude = serializers.DecimalField(
+        source='seller_profile.latitude',
+        max_digits=9,
+        decimal_places=6,
+        required=False,
+        allow_null=True
+    )
+    longitude = serializers.DecimalField(
+        source='seller_profile.longitude',
+        max_digits=9,
+        decimal_places=6,
+        required=False,
+        allow_null=True
+    )
     offers_pickup = serializers.BooleanField(source='seller_profile.offers_pickup')
     offers_delivery = serializers.BooleanField(source='seller_profile.offers_delivery')
     rating_avg = serializers.DecimalField(
@@ -299,6 +313,8 @@ class PublicSellerProfileSerializer(serializers.ModelSerializer):
             'canton',
             'district',
             'address',
+            'latitude',
+            'longitude',
             'offers_pickup',
             'offers_delivery',
             'rating_avg',
