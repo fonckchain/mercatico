@@ -120,10 +120,9 @@ class OrderSerializer(serializers.ModelSerializer):
 
 class OrderCreateSerializer(serializers.ModelSerializer):
     """Serializer for creating orders."""
-    items = serializers.ListField(
-        child=serializers.DictField(),
+    items = serializers.JSONField(
         write_only=True,
-        help_text='List of items: [{"product_id": "uuid", "quantity": 1}]'
+        help_text='List of items: [{"product_id": "uuid", "quantity": 1}] (can be JSON string or list)'
     )
     payment_proof = serializers.ImageField(required=False)
     delivery_fee = serializers.DecimalField(
@@ -157,32 +156,28 @@ class OrderCreateSerializer(serializers.ModelSerializer):
         print(f"DEBUG - validate_items received type: {type(value)}")
         print(f"DEBUG - validate_items received value: {value}")
 
-        # If items comes as string (from FormData), parse it
-        if isinstance(value, str):
-            import json
-            try:
-                value = json.loads(value)
-                print(f"DEBUG - After JSON parse: {value}")
-            except json.JSONDecodeError as e:
-                print(f"DEBUG - JSON decode error: {e}")
-                raise serializers.ValidationError("Formato de items inválido")
+        # JSONField already handles string parsing, but we need to handle edge cases
+        items = value
 
-        # If items is a list and first element is a string, parse it
-        if isinstance(value, list) and len(value) > 0 and isinstance(value[0], str):
-            import json
-            try:
-                # The entire list is actually a JSON string in the first element
-                value = json.loads(value[0])
-                print(f"DEBUG - Parsed from list[0]: {value}")
-            except (json.JSONDecodeError, IndexError) as e:
-                print(f"DEBUG - Error parsing list[0]: {e}")
-                raise serializers.ValidationError("Formato de items inválido")
+        # Ensure it's a list
+        if not isinstance(items, list):
+            print(f"DEBUG - Items is not a list: {type(items)}")
+            raise serializers.ValidationError("Items debe ser una lista")
 
-        if not value:
+        if not items:
             raise serializers.ValidationError("Debe incluir al menos un producto")
 
-        print(f"DEBUG - Final validated items: {value}")
-        return value
+        # Validate each item is a dict with required fields
+        for idx, item in enumerate(items):
+            if not isinstance(item, dict):
+                print(f"DEBUG - Item at index {idx} is not a dict: {type(item)}, value: {item}")
+                raise serializers.ValidationError(f"El item en posición {idx} debe ser un diccionario")
+
+            if 'product_id' not in item or 'quantity' not in item:
+                raise serializers.ValidationError(f"El item en posición {idx} debe tener 'product_id' y 'quantity'")
+
+        print(f"DEBUG - Final validated items: {items}")
+        return items
 
     def validate(self, data):
         """Validate that payment proof is provided for SINPE payments."""
