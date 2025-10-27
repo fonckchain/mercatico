@@ -31,6 +31,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _isLoading = false;
   bool _obscurePassword = true;
   bool _obscurePasswordConfirm = true;
+  bool _acceptedTerms = false;
   String? _errorMessage;
   String _userType = 'BUYER'; // BUYER o SELLER
 
@@ -70,6 +71,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Future<void> _handleRegister() async {
     if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    if (!_acceptedTerms) {
+      setState(() {
+        _errorMessage = 'Debes aceptar los términos y condiciones para continuar';
+      });
       return;
     }
 
@@ -433,6 +441,55 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     return null;
                   },
                 ),
+                const SizedBox(height: 24),
+
+                // Términos y condiciones
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Checkbox(
+                      value: _acceptedTerms,
+                      onChanged: (value) {
+                        setState(() {
+                          _acceptedTerms = value ?? false;
+                        });
+                      },
+                      activeColor: Colors.green,
+                    ),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _acceptedTerms = !_acceptedTerms;
+                          });
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.only(top: 12),
+                          child: RichText(
+                            text: TextSpan(
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Colors.black87,
+                              ),
+                              children: [
+                                const TextSpan(text: 'Acepto los '),
+                                TextSpan(
+                                  text: 'Términos y Condiciones',
+                                  style: TextStyle(
+                                    color: Colors.green[700],
+                                    fontWeight: FontWeight.w600,
+                                    decoration: TextDecoration.underline,
+                                  ),
+                                ),
+                                const TextSpan(text: ' de uso de MercaTico'),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 8),
 
                 // Mensaje de error
@@ -459,7 +516,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                   ),
 
-                const SizedBox(height: 24),
+                const SizedBox(height: 16),
 
                 // Botón de registro
                 ElevatedButton(

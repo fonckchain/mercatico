@@ -226,60 +226,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ],
                   ),
-
-                  // Datos de prueba (solo para desarrollo)
-                  const SizedBox(height: 24),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.blue[50],
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Datos de prueba:',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.blue[900],
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Compradores:',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.blue[700],
-                          ),
-                        ),
-                        Text(
-                          '• comprador1@test.cr / test1234',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.blue[700],
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Vendedores:',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.blue[700],
-                          ),
-                        ),
-                        Text(
-                          '• artesanias.don.juan@test.cr / test1234',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.blue[700],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
                 ],
               ),
             ),
