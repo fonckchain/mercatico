@@ -237,6 +237,25 @@ class ApiService {
     return response.data;
   }
 
+  /// Calcular costo de envío basado en distancia
+  Future<Map<String, dynamic>> calculateDeliveryCost({
+    required String sellerLatitude,
+    required String sellerLongitude,
+    required String buyerLatitude,
+    required String buyerLongitude,
+  }) async {
+    final response = await _dio.post(
+      '${ApiConstants.orders}calculate_delivery_cost/',
+      data: {
+        'seller_latitude': sellerLatitude,
+        'seller_longitude': sellerLongitude,
+        'buyer_latitude': buyerLatitude,
+        'buyer_longitude': buyerLongitude,
+      },
+    );
+    return response.data;
+  }
+
   /// Obtener mis compras
   Future<Map<String, dynamic>> getMyPurchases() async {
     final response = await _dio.get(ApiConstants.myPurchases);

@@ -13,6 +13,8 @@ class CheckoutScreen extends StatefulWidget {
   final double? pickupLatitude;
   final double? pickupLongitude;
   final String? sellerBusinessName;
+  final double? deliveryFee; // Costo de envío calculado
+  final double? distance; // Distancia en km
 
   const CheckoutScreen({
     super.key,
@@ -25,6 +27,8 @@ class CheckoutScreen extends StatefulWidget {
     this.pickupLatitude,
     this.pickupLongitude,
     this.sellerBusinessName,
+    this.deliveryFee,
+    this.distance,
   });
 
   @override
@@ -141,6 +145,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       // Add delivery information if applicable
       if (widget.deliveryMethod == 'delivery') {
         orderData['delivery_address'] = widget.deliveryAddress ?? '';
+        // Add delivery fee if available
+        if (widget.deliveryFee != null) {
+          orderData['delivery_fee'] = widget.deliveryFee!.toStringAsFixed(2);
+        }
         // Note: GPS coordinates are stored in buyer profile, not in order
       }
 
@@ -298,6 +306,34 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                 )) ?? [];
                           })(),
                           const Divider(),
+                          // Subtotal
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text('Subtotal:'),
+                              Text(
+                                '₡${(_cartService.getSellerCart(widget.sellerId)?.totalPrice ?? 0).toStringAsFixed(2)}',
+                              ),
+                            ],
+                          ),
+                          // Delivery fee (if applicable)
+                          if (widget.deliveryMethod == 'delivery' && widget.deliveryFee != null) ...[
+                            const SizedBox(height: 8),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'Envío (${widget.distance?.toStringAsFixed(1) ?? '?'} km):',
+                                  style: const TextStyle(fontSize: 14),
+                                ),
+                                Text(
+                                  '₡${widget.deliveryFee!.toStringAsFixed(2)}',
+                                  style: const TextStyle(fontSize: 14),
+                                ),
+                              ],
+                            ),
+                          ],
+                          const Divider(),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
@@ -309,7 +345,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                 ),
                               ),
                               Text(
-                                '₡${(_cartService.getSellerCart(widget.sellerId)?.totalPrice ?? 0).toStringAsFixed(2)}',
+                                '₡${((_cartService.getSellerCart(widget.sellerId)?.totalPrice ?? 0) + (widget.deliveryFee ?? 0)).toStringAsFixed(2)}',
                                 style: const TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,

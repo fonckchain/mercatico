@@ -113,6 +113,11 @@ class _SellerCartSectionState extends State<_SellerCartSection> {
   // Payment info
   String? _sinpeNumber;
 
+  // Delivery cost calculation
+  double? _deliveryFee;
+  double? _distance;
+  bool _isCalculatingCost = false;
+
   bool _isLoadingInfo = true;
 
   @override
@@ -164,10 +169,46 @@ class _SellerCartSectionState extends State<_SellerCartSection> {
       setState(() {
         _isLoadingInfo = false;
       });
+
+      // Calculate delivery cost if delivery method is selected and we have coordinates
+      if (_deliveryMethod == 'delivery') {
+        _calculateDeliveryCost();
+      }
     } catch (e) {
       print('Error loading info: $e');
       setState(() {
         _isLoadingInfo = false;
+      });
+    }
+  }
+
+  Future<void> _calculateDeliveryCost() async {
+    if (_pickupLatitude == null || _pickupLongitude == null ||
+        _deliveryLatitude == null || _deliveryLongitude == null) {
+      return;
+    }
+
+    setState(() {
+      _isCalculatingCost = true;
+    });
+
+    try {
+      final result = await _apiService.calculateDeliveryCost(
+        sellerLatitude: _pickupLatitude.toString(),
+        sellerLongitude: _pickupLongitude.toString(),
+        buyerLatitude: _deliveryLatitude.toString(),
+        buyerLongitude: _deliveryLongitude.toString(),
+      );
+
+      setState(() {
+        _distance = double.tryParse(result['distance_km'].toString());
+        _deliveryFee = double.tryParse(result['delivery_fee'].toString());
+        _isCalculatingCost = false;
+      });
+    } catch (e) {
+      print('Error calculating delivery cost: $e');
+      setState(() {
+        _isCalculatingCost = false;
       });
     }
   }
@@ -226,6 +267,8 @@ class _SellerCartSectionState extends State<_SellerCartSection> {
           pickupLatitude: _deliveryMethod == 'pickup' ? _pickupLatitude : null,
           pickupLongitude: _deliveryMethod == 'pickup' ? _pickupLongitude : null,
           sellerBusinessName: widget.sellerCart.sellerName,
+          deliveryFee: _deliveryMethod == 'delivery' ? _deliveryFee : null,
+          distance: _deliveryMethod == 'delivery' ? _distance : null,
         ),
       ),
     ).then((_) => widget.onUpdate());
@@ -520,6 +563,10 @@ class _SellerCartSectionState extends State<_SellerCartSection> {
                               setState(() {
                                 _deliveryMethod = value!;
                               });
+                              // Calculate delivery cost when switching to delivery
+                              if (value == 'delivery') {
+                                _calculateDeliveryCost();
+                              }
                             },
                             dense: true,
                             contentPadding: EdgeInsets.zero,
@@ -694,6 +741,86 @@ class _SellerCartSectionState extends State<_SellerCartSection> {
 
                   const SizedBox(height: 16),
 
+                  // Delivery cost summary
+                  if (_deliveryMethod == 'delivery') ...[
+                    Card(
+                      color: Colors.amber.shade50,
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text('Subtotal productos:'),
+                                Text('₡${widget.sellerCart.totalPrice.toStringAsFixed(2)}'),
+                              ],
+                            ),
+                            const Divider(),
+                            if (_isCalculatingCost)
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text('Costo de envío:'),
+                                  const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  ),
+                                ],
+                              )
+                            else if (_deliveryFee != null && _distance != null)
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text('Costo de envío (${_distance!.toStringAsFixed(1)} km):'),
+                                  Text(
+                                    '₡${_deliveryFee!.toStringAsFixed(2)}',
+                                    style: const TextStyle(fontWeight: FontWeight.w500),
+                                  ),
+                                ],
+                              )
+                            else
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'Costo de envío: No disponible',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.orange.shade700,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            const Divider(),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text(
+                                  'Total:',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Text(
+                                  '₡${((widget.sellerCart.totalPrice) + (_deliveryFee ?? 0)).toStringAsFixed(2)}',
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.green,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+
                   // Checkout Button
                   SizedBox(
                     width: double.infinity,
@@ -705,7 +832,9 @@ class _SellerCartSectionState extends State<_SellerCartSection> {
                         foregroundColor: Colors.white,
                       ),
                       child: Text(
-                        'Proceder al pago - ₡${widget.sellerCart.totalPrice.toStringAsFixed(2)}',
+                        _deliveryMethod == 'delivery' && _deliveryFee != null
+                            ? 'Proceder al pago - ₡${((widget.sellerCart.totalPrice) + _deliveryFee!).toStringAsFixed(2)}'
+                            : 'Proceder al pago - ₡${widget.sellerCart.totalPrice.toStringAsFixed(2)}',
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,

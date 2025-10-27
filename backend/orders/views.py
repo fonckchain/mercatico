@@ -14,6 +14,7 @@ from orders.serializers import (
     OrderUpdateStatusSerializer,
     OrderItemSerializer,
 )
+from orders.utils import calculate_distance, calculate_delivery_fee
 from users.models import User
 
 
@@ -156,6 +157,57 @@ class OrderViewSet(viewsets.ModelViewSet):
         serializer.save()
 
         return Response(OrderSerializer(order).data)
+
+    @action(detail=False, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def calculate_delivery_cost(self, request):
+        """
+        Calculate delivery cost based on distance between seller and buyer locations.
+
+        Expected request data:
+        {
+            "seller_latitude": "9.943100",
+            "seller_longitude": "-84.063106",
+            "buyer_latitude": "9.935300",
+            "buyer_longitude": "-84.087800"
+        }
+
+        Returns:
+        {
+            "distance_km": "2.45",
+            "delivery_fee": "1500.00",
+            "currency": "CRC"
+        }
+        """
+        seller_lat = request.data.get('seller_latitude')
+        seller_lon = request.data.get('seller_longitude')
+        buyer_lat = request.data.get('buyer_latitude')
+        buyer_lon = request.data.get('buyer_longitude')
+
+        # Validate required fields
+        if not all([seller_lat, seller_lon, buyer_lat, buyer_lon]):
+            return Response(
+                {'detail': 'Se requieren las coordenadas del vendedor y comprador'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            # Calculate distance
+            distance = calculate_distance(seller_lat, seller_lon, buyer_lat, buyer_lon)
+
+            # Calculate delivery fee based on distance
+            delivery_fee = calculate_delivery_fee(distance)
+
+            return Response({
+                'distance_km': str(distance),
+                'delivery_fee': str(delivery_fee),
+                'currency': 'CRC'
+            })
+
+        except Exception as e:
+            return Response(
+                {'detail': f'Error al calcular costo de envío: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
     @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
     def my_purchases(self, request):
