@@ -257,6 +257,21 @@ class ApiService {
     }
   }
 
+  /// Obtener historial de compras del usuario
+  Future<List<dynamic>> getMyPurchases() async {
+    final response = await _dio.get('${ApiConstants.orders}my_purchases/');
+    if (response.data is Map && response.data.containsKey('results')) {
+      return response.data['results'] as List<dynamic>;
+    }
+    return response.data as List<dynamic>;
+  }
+
+  /// Obtener detalles de una orden específica
+  Future<Map<String, dynamic>> getOrderDetails(String orderId) async {
+    final response = await _dio.get('${ApiConstants.orders}$orderId/');
+    return response.data;
+  }
+
   /// Calcular costo de envío basado en distancia
   Future<Map<String, dynamic>> calculateDeliveryCost({
     required String sellerLatitude,
