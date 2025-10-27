@@ -291,12 +291,6 @@ class ApiService {
     return response.data;
   }
 
-  /// Obtener mis compras
-  Future<Map<String, dynamic>> getMyPurchases() async {
-    final response = await _dio.get(ApiConstants.myPurchases);
-    return response.data;
-  }
-
   /// Obtener mis ventas
   Future<Map<String, dynamic>> getMySales() async {
     final response = await _dio.get(ApiConstants.mySales);
