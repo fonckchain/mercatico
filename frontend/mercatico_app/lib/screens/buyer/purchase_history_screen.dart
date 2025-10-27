@@ -205,7 +205,7 @@ class _PurchaseHistoryScreenState extends State<PurchaseHistoryScreen> {
                               Navigator.pop(context);
                               _contactSeller(
                                 order['seller']['phone'] ?? '',
-                                order['seller']['business_name'] ?? 'el vendedor',
+                                order['seller']['business_name'] ?? 'El Vendedor',
                               );
                             },
                             icon: const Icon(Icons.phone),
@@ -623,7 +623,7 @@ class _PurchaseHistoryScreenState extends State<PurchaseHistoryScreen> {
                                           tooltip: 'Contactar',
                                           onPressed: () => _contactSeller(
                                             order['seller']['phone'] ?? '',
-                                            order['seller']['business_name'] ?? 'el vendedor',
+                                            order['seller']['business_name'] ?? 'El Vendedor',
                                           ),
                                         ),
                                         const Icon(Icons.arrow_forward_ios, size: 16),
