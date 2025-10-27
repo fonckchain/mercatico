@@ -233,14 +233,32 @@ class ApiService {
       Map<String, dynamic> orderData, {String? paymentProofPath}) async {
     // If there's a payment proof image, use FormData
     if (paymentProofPath != null) {
-      final formData = FormData.fromMap({
-        ...orderData,
-        'items': jsonEncode(orderData['items']), // Serialize items list
-        'payment_proof': await MultipartFile.fromFile(
-          paymentProofPath,
-          filename: 'payment_proof_${DateTime.now().millisecondsSinceEpoch}.jpg',
-        ),
+      // Create a copy of orderData to modify
+      final Map<String, dynamic> formDataMap = {};
+
+      // Add all fields except items
+      orderData.forEach((key, value) {
+        if (key != 'items') {
+          formDataMap[key] = value;
+        }
       });
+
+      // Add items as JSON string
+      final itemsJson = jsonEncode(orderData['items']);
+      print('DEBUG - Items JSON: $itemsJson');
+      print('DEBUG - Items original: ${orderData['items']}');
+      formDataMap['items'] = itemsJson;
+
+      // Add payment proof file
+      formDataMap['payment_proof'] = await MultipartFile.fromFile(
+        paymentProofPath,
+        filename: 'payment_proof_${DateTime.now().millisecondsSinceEpoch}.jpg',
+      );
+
+      print('DEBUG - FormData map keys: ${formDataMap.keys}');
+      print('DEBUG - FormData items value: ${formDataMap['items']}');
+
+      final formData = FormData.fromMap(formDataMap);
 
       final response = await _dio.post(
         ApiConstants.orders,
