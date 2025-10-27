@@ -86,6 +86,7 @@ class OrderSerializer(serializers.ModelSerializer):
             'delivery_notes',
             'payment_method',
             'payment_method_display',
+            'payment_proof',
             'payment_verified',
             'payment_verified_at',
             'buyer_phone',
@@ -124,6 +125,13 @@ class OrderCreateSerializer(serializers.ModelSerializer):
         write_only=True,
         help_text='List of items: [{"product_id": "uuid", "quantity": 1}]'
     )
+    payment_proof = serializers.ImageField(required=False)
+    delivery_fee = serializers.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        required=False,
+        help_text='Delivery fee calculated by frontend'
+    )
 
     class Meta:
         model = Order
@@ -135,7 +143,9 @@ class OrderCreateSerializer(serializers.ModelSerializer):
             'delivery_canton',
             'delivery_district',
             'delivery_notes',
+            'delivery_fee',
             'payment_method',
+            'payment_proof',
             'buyer_phone',
             'buyer_email',
             'buyer_notes',
@@ -144,9 +154,29 @@ class OrderCreateSerializer(serializers.ModelSerializer):
 
     def validate_items(self, value):
         """Validate that items list is not empty."""
+        # If items comes as string (from FormData), parse it
+        if isinstance(value, str):
+            import json
+            try:
+                value = json.loads(value)
+            except json.JSONDecodeError:
+                raise serializers.ValidationError("Formato de items inválido")
+
         if not value:
             raise serializers.ValidationError("Debe incluir al menos un producto")
         return value
+
+    def validate(self, data):
+        """Validate that payment proof is provided for SINPE payments."""
+        payment_method = data.get('payment_method')
+        payment_proof = data.get('payment_proof')
+
+        if payment_method == 'SINPE' and not payment_proof:
+            raise serializers.ValidationError({
+                'payment_proof': 'Debes subir el comprobante de pago para pagos con SINPE Móvil'
+            })
+
+        return data
 
     def create(self, validated_data):
         """Create order with items."""
@@ -169,11 +199,16 @@ class OrderCreateSerializer(serializers.ModelSerializer):
             delivery_fee = validated_data.get('delivery_fee', Decimal('0.00'))
             total = subtotal + delivery_fee
 
+            # Determine initial status based on payment method
+            payment_method = validated_data.get('payment_method')
+            initial_status = Order.OrderStatus.PAYMENT_PENDING if payment_method == 'SINPE' else Order.OrderStatus.PENDING
+
             # Create order with calculated totals
             order = Order.objects.create(
                 buyer=buyer,
                 subtotal=subtotal,
                 total=total,
+                status=initial_status,
                 **validated_data
             )
 

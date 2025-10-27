@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 import '../../core/services/cart_service.dart';
 import '../../core/services/api_service.dart';
 
@@ -38,10 +40,12 @@ class CheckoutScreen extends StatefulWidget {
 class _CheckoutScreenState extends State<CheckoutScreen> {
   final CartService _cartService = CartService();
   final ApiService _apiService = ApiService();
+  final ImagePicker _imagePicker = ImagePicker();
 
   String? _paymentMethod; // 'sinpe' or 'cash'
   bool _isLoading = true;
   bool _isProcessingOrder = false;
+  File? _paymentProofImage;
 
   // Seller payment preferences
   bool _sellerAcceptsCash = false;
@@ -103,12 +107,50 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     }
   }
 
+  Future<void> _pickPaymentProofImage() async {
+    try {
+      final XFile? pickedFile = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1920,
+        maxHeight: 1920,
+        imageQuality: 85,
+      );
+
+      if (pickedFile != null) {
+        setState(() {
+          _paymentProofImage = File(pickedFile.path);
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al seleccionar imagen: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   Future<void> _processOrder() async {
     if (_paymentMethod == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Por favor selecciona un método de pago'),
           backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Validate payment proof for SINPE
+    if (_paymentMethod == 'SINPE' && _paymentProofImage == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Debes subir el comprobante de pago para pagos con SINPE Móvil'),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 3),
         ),
       );
       return;
@@ -153,7 +195,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       }
 
       // Create order via API
-      final createdOrder = await _apiService.createOrder(orderData);
+      final createdOrder = await _apiService.createOrder(
+        orderData,
+        paymentProofPath: _paymentProofImage?.path,
+      );
 
       // Clear only this seller's cart after successful order
       await _cartService.clearSeller(widget.sellerId);
@@ -480,6 +525,92 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         ),
                       ),
                   ],
+
+                  // Payment proof upload for SINPE
+                  if (_paymentMethod == 'sinpe') ...[
+                    const SizedBox(height: 24),
+                    Card(
+                      color: Colors.amber.shade50,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(Icons.camera_alt, color: Colors.orange.shade700),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Comprobante de pago',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.orange.shade700,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            const Text(
+                              'Para completar tu pedido, realiza el pago SINPE Móvil al número indicado y sube el comprobante.',
+                              style: TextStyle(fontSize: 13),
+                            ),
+                            const SizedBox(height: 16),
+                            if (_paymentProofImage != null) ...[
+                              Container(
+                                height: 200,
+                                width: double.infinity,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: Colors.green.shade300, width: 2),
+                                ),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Image.file(
+                                    _paymentProofImage!,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              Row(
+                                children: [
+                                  Icon(Icons.check_circle, color: Colors.green, size: 20),
+                                  const SizedBox(width: 8),
+                                  const Expanded(
+                                    child: Text(
+                                      'Comprobante cargado correctamente',
+                                      style: TextStyle(
+                                        color: Colors.green,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                            ],
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton.icon(
+                                onPressed: _pickPaymentProofImage,
+                                icon: Icon(_paymentProofImage == null ? Icons.upload_file : Icons.change_circle),
+                                label: Text(_paymentProofImage == null ? 'Subir comprobante' : 'Cambiar comprobante'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.orange.shade700,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+
                   const SizedBox(height: 32),
 
                   // Confirm Button

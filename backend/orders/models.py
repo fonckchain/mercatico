@@ -102,6 +102,13 @@ class Order(models.Model):
         choices=PaymentMethod.choices,
         default=PaymentMethod.SINPE
     )
+    payment_proof = models.ImageField(
+        'comprobante de pago',
+        upload_to='payment_proofs/',
+        null=True,
+        blank=True,
+        help_text='Screenshot del comprobante de pago SINPE'
+    )
     payment_verified = models.BooleanField('pago verificado', default=False)
     payment_verified_at = models.DateTimeField('fecha de verificación de pago', null=True, blank=True)
 

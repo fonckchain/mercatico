@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import '../constants/api_constants.dart';
 
@@ -229,12 +230,31 @@ class ApiService {
 
   /// Crear nueva orden
   Future<Map<String, dynamic>> createOrder(
-      Map<String, dynamic> orderData) async {
-    final response = await _dio.post(
-      ApiConstants.orders,
-      data: orderData,
-    );
-    return response.data;
+      Map<String, dynamic> orderData, {String? paymentProofPath}) async {
+    // If there's a payment proof image, use FormData
+    if (paymentProofPath != null) {
+      final formData = FormData.fromMap({
+        ...orderData,
+        'items': jsonEncode(orderData['items']), // Serialize items list
+        'payment_proof': await MultipartFile.fromFile(
+          paymentProofPath,
+          filename: 'payment_proof_${DateTime.now().millisecondsSinceEpoch}.jpg',
+        ),
+      });
+
+      final response = await _dio.post(
+        ApiConstants.orders,
+        data: formData,
+      );
+      return response.data;
+    } else {
+      // Regular JSON request without file
+      final response = await _dio.post(
+        ApiConstants.orders,
+        data: orderData,
+      );
+      return response.data;
+    }
   }
 
   /// Calcular costo de envío basado en distancia
