@@ -50,34 +50,111 @@ class _PurchaseHistoryScreenState extends State<PurchaseHistoryScreen> {
 
   Future<void> _contactSeller(String phone, String sellerName) async {
     // Clean phone number (remove spaces, dashes, etc.)
-    final cleanPhone = phone.replaceAll(RegExp(r'[^\d+]'), '');
+    String cleanPhone = phone.replaceAll(RegExp(r'[^\d+]'), '');
 
-    // Create WhatsApp URL
-    final whatsappUrl = Uri.parse('https://wa.me/$cleanPhone?text=${Uri.encodeComponent('Hola, tengo una consulta sobre mi pedido en MercaTico')}');
-
-    try {
-      if (await canLaunchUrl(whatsappUrl)) {
-        await launchUrl(whatsappUrl, mode: LaunchMode.externalApplication);
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('No se pudo abrir WhatsApp'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error al abrir WhatsApp: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+    // If phone doesn't start with +, assume Costa Rica (+506)
+    if (!cleanPhone.startsWith('+')) {
+      cleanPhone = '+506$cleanPhone';
     }
+
+    // Show options dialog
+    if (!mounted) return;
+
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Contactar a $sellerName',
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: const Icon(Icons.phone, color: Color(0xFF25D366)),
+                title: const Text('WhatsApp'),
+                subtitle: Text(phone),
+                onTap: () async {
+                  Navigator.pop(context);
+                  final whatsappUrl = Uri.parse(
+                    'https://wa.me/$cleanPhone?text=${Uri.encodeComponent('Hola, tengo una consulta sobre mi pedido en MercaTico')}',
+                  );
+
+                  try {
+                    final canLaunch = await canLaunchUrl(whatsappUrl);
+                    if (canLaunch) {
+                      await launchUrl(whatsappUrl, mode: LaunchMode.externalApplication);
+                    } else {
+                      // Try alternative WhatsApp URL scheme
+                      final altUrl = Uri.parse('whatsapp://send?phone=$cleanPhone&text=${Uri.encodeComponent('Hola, tengo una consulta sobre mi pedido en MercaTico')}');
+                      if (await canLaunchUrl(altUrl)) {
+                        await launchUrl(altUrl, mode: LaunchMode.externalApplication);
+                      } else {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('WhatsApp no está instalado'),
+                              backgroundColor: Colors.orange,
+                            ),
+                          );
+                        }
+                      }
+                    }
+                  } catch (e) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Error al abrir WhatsApp: $e'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  }
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.call, color: Colors.blue),
+                title: const Text('Llamar'),
+                subtitle: Text(phone),
+                onTap: () async {
+                  Navigator.pop(context);
+                  final telUrl = Uri.parse('tel:$cleanPhone');
+                  try {
+                    if (await canLaunchUrl(telUrl)) {
+                      await launchUrl(telUrl);
+                    } else {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('No se pudo realizar la llamada'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
+                    }
+                  } catch (e) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Error al realizar llamada: $e'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  }
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   void _showOrderDetails(Map<String, dynamic> order) {
