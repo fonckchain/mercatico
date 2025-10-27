@@ -491,8 +491,10 @@ class _SellerCartSectionState extends State<_SellerCartSection> {
 
                   // Pickup location info
                   if (_deliveryMethod == 'pickup') ...[
-                    Card(
+                    Material(
                       color: Colors.blue.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                      elevation: 1,
                       child: InkWell(
                         onTap: _pickupLatitude != null && _pickupLongitude != null
                             ? _openLocationInMap

@@ -268,6 +268,7 @@ class PublicSellerProfileSerializer(serializers.ModelSerializer):
     business_name = serializers.CharField(source='seller_profile.business_name')
     description = serializers.CharField(source='seller_profile.description')
     logo = serializers.ImageField(source='seller_profile.logo')
+    sinpe_number = serializers.CharField(source='seller_profile.sinpe_number')
     province = serializers.CharField(source='seller_profile.province')
     canton = serializers.CharField(source='seller_profile.canton')
     district = serializers.CharField(source='seller_profile.district')
@@ -293,6 +294,7 @@ class PublicSellerProfileSerializer(serializers.ModelSerializer):
             'business_name',
             'description',
             'logo',
+            'sinpe_number',
             'province',
             'canton',
             'district',
