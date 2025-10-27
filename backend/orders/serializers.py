@@ -153,15 +153,11 @@ class OrderCreateSerializer(serializers.ModelSerializer):
 
     def validate_items(self, value):
         """Validate that items list is not empty."""
-        print(f"DEBUG - validate_items received type: {type(value)}")
-        print(f"DEBUG - validate_items received value: {value}")
-
         # JSONField already handles string parsing, but we need to handle edge cases
         items = value
 
         # Ensure it's a list
         if not isinstance(items, list):
-            print(f"DEBUG - Items is not a list: {type(items)}")
             raise serializers.ValidationError("Items debe ser una lista")
 
         if not items:
@@ -170,13 +166,11 @@ class OrderCreateSerializer(serializers.ModelSerializer):
         # Validate each item is a dict with required fields
         for idx, item in enumerate(items):
             if not isinstance(item, dict):
-                print(f"DEBUG - Item at index {idx} is not a dict: {type(item)}, value: {item}")
                 raise serializers.ValidationError(f"El item en posición {idx} debe ser un diccionario")
 
             if 'product_id' not in item or 'quantity' not in item:
                 raise serializers.ValidationError(f"El item en posición {idx} debe tener 'product_id' y 'quantity'")
 
-        print(f"DEBUG - Final validated items: {items}")
         return items
 
     def validate(self, data):

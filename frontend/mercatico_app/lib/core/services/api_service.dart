@@ -244,19 +244,13 @@ class ApiService {
       });
 
       // Add items as JSON string
-      final itemsJson = jsonEncode(orderData['items']);
-      print('DEBUG - Items JSON: $itemsJson');
-      print('DEBUG - Items original: ${orderData['items']}');
-      formDataMap['items'] = itemsJson;
+      formDataMap['items'] = jsonEncode(orderData['items']);
 
       // Add payment proof file
       formDataMap['payment_proof'] = await MultipartFile.fromFile(
         paymentProofPath,
         filename: 'payment_proof_${DateTime.now().millisecondsSinceEpoch}.jpg',
       );
-
-      print('DEBUG - FormData map keys: ${formDataMap.keys}');
-      print('DEBUG - FormData items value: ${formDataMap['items']}');
 
       final formData = FormData.fromMap(formDataMap);
 
