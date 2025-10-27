@@ -139,24 +139,14 @@ class _SellerCartSectionState extends State<_SellerCartSection> {
       final userData = await _apiService.getCurrentUser();
       final buyerProfile = userData['buyer_profile'];
 
-      print('DEBUG - Buyer profile data: $buyerProfile');
-
       if (buyerProfile != null) {
         _addressController.text = buyerProfile['address'] ?? '';
         if (buyerProfile['latitude'] != null) {
           _deliveryLatitude = double.tryParse(buyerProfile['latitude'].toString());
-          print('DEBUG - Delivery latitude parsed: $_deliveryLatitude');
-        } else {
-          print('DEBUG - Buyer profile latitude is null');
         }
         if (buyerProfile['longitude'] != null) {
           _deliveryLongitude = double.tryParse(buyerProfile['longitude'].toString());
-          print('DEBUG - Delivery longitude parsed: $_deliveryLongitude');
-        } else {
-          print('DEBUG - Buyer profile longitude is null');
         }
-      } else {
-        print('DEBUG - Buyer profile is null');
       }
 
       // Load seller info from first product
@@ -165,27 +155,17 @@ class _SellerCartSectionState extends State<_SellerCartSection> {
         final productData = await _apiService.getProduct(firstProduct.id);
         final sellerInfo = productData['seller_info'];
 
-        print('DEBUG - Seller info data: $sellerInfo');
-
         if (sellerInfo != null) {
           _sellerAddress = sellerInfo['address'];
           if (sellerInfo['latitude'] != null) {
             _pickupLatitude = double.tryParse(sellerInfo['latitude'].toString());
-            print('DEBUG - Pickup latitude parsed: $_pickupLatitude');
-          } else {
-            print('DEBUG - Seller latitude is null');
           }
           if (sellerInfo['longitude'] != null) {
             _pickupLongitude = double.tryParse(sellerInfo['longitude'].toString());
-            print('DEBUG - Pickup longitude parsed: $_pickupLongitude');
-          } else {
-            print('DEBUG - Seller longitude is null');
           }
           _sinpeNumber = sellerInfo['sinpe_number'];
         }
       }
-
-      print('DEBUG - Final coordinates: pickup($_pickupLatitude, $_pickupLongitude), delivery($_deliveryLatitude, $_deliveryLongitude)');
 
       setState(() {
         _isLoadingInfo = false;
@@ -193,7 +173,6 @@ class _SellerCartSectionState extends State<_SellerCartSection> {
 
       // Calculate delivery cost if delivery method is selected and we have coordinates
       if (_deliveryMethod == 'delivery') {
-        print('DEBUG - Attempting to calculate delivery cost...');
         _calculateDeliveryCost();
       }
     } catch (e) {
@@ -205,15 +184,8 @@ class _SellerCartSectionState extends State<_SellerCartSection> {
   }
 
   Future<void> _calculateDeliveryCost() async {
-    print('DEBUG - _calculateDeliveryCost called');
-    print('DEBUG - Pickup: ($_pickupLatitude, $_pickupLongitude)');
-    print('DEBUG - Delivery: ($_deliveryLatitude, $_deliveryLongitude)');
-
     if (_pickupLatitude == null || _pickupLongitude == null ||
         _deliveryLatitude == null || _deliveryLongitude == null) {
-      print('DEBUG - Missing coordinates, cannot calculate cost');
-      print('DEBUG - Pickup null: ${_pickupLatitude == null || _pickupLongitude == null}');
-      print('DEBUG - Delivery null: ${_deliveryLatitude == null || _deliveryLongitude == null}');
       return;
     }
 
@@ -222,7 +194,6 @@ class _SellerCartSectionState extends State<_SellerCartSection> {
     });
 
     try {
-      print('DEBUG - Calling API to calculate delivery cost...');
       final result = await _apiService.calculateDeliveryCost(
         sellerLatitude: _pickupLatitude.toString(),
         sellerLongitude: _pickupLongitude.toString(),
@@ -230,16 +201,11 @@ class _SellerCartSectionState extends State<_SellerCartSection> {
         buyerLongitude: _deliveryLongitude.toString(),
       );
 
-      print('DEBUG - API result: $result');
-
       setState(() {
         _distance = double.tryParse(result['distance_km'].toString());
         _deliveryFee = double.tryParse(result['delivery_fee'].toString());
         _isCalculatingCost = false;
       });
-
-      print('DEBUG - Parsed distance: $_distance km');
-      print('DEBUG - Parsed delivery fee: ₡$_deliveryFee');
     } catch (e) {
       print('Error calculating delivery cost: $e');
       setState(() {
