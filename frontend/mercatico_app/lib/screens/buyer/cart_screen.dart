@@ -498,12 +498,15 @@ class _SellerCartSectionState extends State<_SellerCartSection> {
                   // Pickup location info
                   if (_deliveryMethod == 'pickup') ...[
                     GestureDetector(
+                      behavior: HitTestBehavior.opaque,
                       onTap: _pickupLatitude != null && _pickupLongitude != null
                           ? () {
                               print('Card tapped! Opening map...');
                               _openLocationInMap();
                             }
-                          : null,
+                          : () {
+                              print('Card tapped but no coordinates');
+                            },
                       child: Card(
                         color: Colors.blue.shade50,
                         child: Padding(
