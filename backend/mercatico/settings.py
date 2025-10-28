@@ -175,10 +175,24 @@ SIMPLE_JWT = {
 }
 
 # CORS Settings
-CORS_ALLOWED_ORIGINS = config(
-    'CORS_ALLOWED_ORIGINS',
-    default='http://localhost:3000,http://localhost:8080'
-).split(',')
+if DEBUG:
+    # In development, allow all localhost origins (for Flutter web dev server with random ports)
+    CORS_ALLOW_ALL_ORIGINS = False
+    CORS_ALLOWED_ORIGIN_REGEXES = [
+        r"^http://localhost:\d+$",
+        r"^http://127\.0\.0\.1:\d+$",
+    ]
+    # Also allow specific origins
+    CORS_ALLOWED_ORIGINS = config(
+        'CORS_ALLOWED_ORIGINS',
+        default='http://localhost:3000,http://localhost:8080'
+    ).split(',')
+else:
+    # In production, only allow specific origins
+    CORS_ALLOWED_ORIGINS = config(
+        'CORS_ALLOWED_ORIGINS',
+        default=''
+    ).split(',')
 
 CORS_ALLOW_CREDENTIALS = True
 
