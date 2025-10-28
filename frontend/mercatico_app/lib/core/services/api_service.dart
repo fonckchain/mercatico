@@ -299,7 +299,7 @@ class ApiService {
     String status, {
     String? notes,
   }) async {
-    final response = await _dio.patch(
+    final response = await _dio.post(
       '${ApiConstants.orders}$orderId/update_status/',
       data: {
         'status': status,
