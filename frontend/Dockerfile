@@ -8,7 +8,7 @@ COPY mercatico_app/pubspec.* ./
 RUN flutter pub get
 
 COPY mercatico_app/ ./
-RUN flutter build web --release --web-renderer canvaskit
+RUN flutter build web --release
 
 # Stage 2: Serve with nginx
 FROM nginx:alpine
