@@ -18,7 +18,7 @@ class Order(models.Model):
         PAYMENT_PENDING = 'PAYMENT_PENDING', 'Pago pendiente de verificación'
         CONFIRMED = 'CONFIRMED', 'Confirmada'
         PROCESSING = 'PROCESSING', 'En proceso'
-        SHIPPED = 'SHIPPED', 'Enviado'
+        SHIPPED = 'SHIPPED', 'Listo para entrega'
         DELIVERED = 'DELIVERED', 'Entregado'
         CANCELLED = 'CANCELLED', 'Cancelado'
         REFUNDED = 'REFUNDED', 'Reembolsado'

@@ -492,8 +492,8 @@ class _SalesHistoryScreenState extends State<SalesHistoryScreen> {
                             ),
                           if (order['status'] == 'CONFIRMED' || order['status'] == 'PROCESSING')
                             _buildStatusButton(
-                              'Marcar como Enviado',
-                              Icons.local_shipping,
+                              'Marcar como Listo para Entrega',
+                              Icons.inventory,
                               Colors.orange,
                               () {
                                 Navigator.pop(context);
@@ -572,7 +572,7 @@ class _SalesHistoryScreenState extends State<SalesHistoryScreen> {
         statusLabel = 'Confirmada';
         break;
       case 'SHIPPED':
-        statusLabel = 'Enviado';
+        statusLabel = 'Listo para Entrega';
         break;
       case 'DELIVERED':
         statusLabel = 'Entregado';
@@ -739,6 +739,7 @@ class _SalesHistoryScreenState extends State<SalesHistoryScreen> {
         backgroundColor = Colors.orange.shade100;
         textColor = Colors.orange.shade900;
         break;
+      case 'listo para entrega':
       case 'enviado':
         backgroundColor = Colors.purple.shade100;
         textColor = Colors.purple.shade900;

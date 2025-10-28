@@ -365,7 +365,7 @@ class _PurchaseHistoryScreenState extends State<PurchaseHistoryScreen> {
                           ),
                         if (order['shipped_at'] != null)
                           _buildInfoRow(
-                            'Enviado',
+                            'Listo para entrega',
                             _formatDate(order['shipped_at']),
                           ),
                         if (order['delivered_at'] != null)
@@ -460,6 +460,11 @@ class _PurchaseHistoryScreenState extends State<PurchaseHistoryScreen> {
       case 'pago pendiente de verificación':
         backgroundColor = Colors.orange.shade100;
         textColor = Colors.orange.shade900;
+        break;
+      case 'listo para entrega':
+      case 'enviado':
+        backgroundColor = Colors.purple.shade100;
+        textColor = Colors.purple.shade900;
         break;
       default:
         backgroundColor = Colors.grey.shade200;
