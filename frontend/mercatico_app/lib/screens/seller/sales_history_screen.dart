@@ -305,20 +305,32 @@ class _SalesHistoryScreenState extends State<SalesHistoryScreen> {
                               'Comprobante de pago:',
                               style: TextStyle(fontWeight: FontWeight.w500),
                             ),
-                            const SizedBox(height: 8),
-                            Container(
-                              height: 200,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: Colors.grey.shade300),
+                            const SizedBox(height: 4),
+                            const Text(
+                              '(Toca la imagen para verla en grande)',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                                fontStyle: FontStyle.italic,
                               ),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: Image.network(
-                                  order['payment_proof'],
-                                  fit: BoxFit.contain,
-                                  errorBuilder: (context, error, stackTrace) =>
-                                      const Center(child: Text('Error al cargar imagen')),
+                            ),
+                            const SizedBox(height: 8),
+                            GestureDetector(
+                              onTap: () => _showPaymentProofFullScreen(order['payment_proof']),
+                              child: Container(
+                                height: 200,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: Colors.grey.shade300),
+                                ),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Image.network(
+                                    order['payment_proof'],
+                                    fit: BoxFit.contain,
+                                    errorBuilder: (context, error, stackTrace) =>
+                                        const Center(child: Text('Error al cargar imagen')),
+                                  ),
                                 ),
                               ),
                             ),
@@ -616,6 +628,38 @@ class _SalesHistoryScreenState extends State<SalesHistoryScreen> {
             child: const Text('Confirmar Pago'),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showPaymentProofFullScreen(String imageUrl) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => Scaffold(
+          backgroundColor: Colors.black,
+          appBar: AppBar(
+            backgroundColor: Colors.black,
+            foregroundColor: Colors.white,
+            title: const Text('Comprobante de Pago'),
+          ),
+          body: Center(
+            child: InteractiveViewer(
+              minScale: 0.5,
+              maxScale: 4.0,
+              child: Image.network(
+                imageUrl,
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) => const Center(
+                  child: Text(
+                    'Error al cargar imagen',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

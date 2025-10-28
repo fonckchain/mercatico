@@ -246,3 +246,55 @@ class OrderViewSet(viewsets.ModelViewSet):
 
         serializer = self.get_serializer(orders, many=True)
         return Response(serializer.data)
+
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def confirm_payment(self, request, pk=None):
+        """
+        Confirm payment for an order with SINPE payment method.
+        Only sellers can confirm payment for their sales.
+        """
+        order = self.get_object()
+
+        # Only seller can confirm payment
+        if order.seller != request.user and not request.user.is_staff:
+            return Response(
+                {'detail': 'Solo el vendedor puede confirmar el pago'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # Check if order has SINPE payment method
+        if order.payment_method != 'SINPE':
+            return Response(
+                {'detail': 'Solo se puede confirmar pago para órdenes con SINPE Móvil'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Check if payment is already verified
+        if order.payment_verified:
+            return Response(
+                {'detail': 'El pago ya ha sido verificado'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Mark payment as verified
+        from django.utils import timezone
+        order.payment_verified = True
+        order.payment_verified_at = timezone.now()
+
+        # If order is in PAYMENT_PENDING, move it to CONFIRMED
+        if order.status == Order.OrderStatus.PAYMENT_PENDING:
+            order.status = Order.OrderStatus.CONFIRMED
+            order.confirmed_at = timezone.now()
+
+        order.save()
+
+        # Create status history
+        from orders.models import OrderStatusHistory
+        OrderStatusHistory.objects.create(
+            order=order,
+            status=order.status,
+            notes='Pago SINPE Móvil verificado y confirmado por el vendedor',
+            changed_by=request.user
+        )
+
+        return Response(OrderSerializer(order).data)
