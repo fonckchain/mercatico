@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../core/services/auth_service.dart';
 import '../../widgets/location_picker.dart';
+import 'terms_and_conditions_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -457,33 +459,35 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       activeColor: Colors.green,
                     ),
                     Expanded(
-                      child: GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _acceptedTerms = !_acceptedTerms;
-                          });
-                        },
-                        child: Padding(
-                          padding: const EdgeInsets.only(top: 12),
-                          child: RichText(
-                            text: TextSpan(
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: Colors.black87,
-                              ),
-                              children: [
-                                const TextSpan(text: 'Acepto los '),
-                                TextSpan(
-                                  text: 'Términos y Condiciones',
-                                  style: TextStyle(
-                                    color: Colors.green[700],
-                                    fontWeight: FontWeight.w600,
-                                    decoration: TextDecoration.underline,
-                                  ),
-                                ),
-                                const TextSpan(text: ' de uso de MercaTico'),
-                              ],
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 12),
+                        child: RichText(
+                          text: TextSpan(
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Colors.black87,
                             ),
+                            children: [
+                              const TextSpan(text: 'Acepto los '),
+                              TextSpan(
+                                text: 'Términos y Condiciones',
+                                style: TextStyle(
+                                  color: Colors.green[700],
+                                  fontWeight: FontWeight.w600,
+                                  decoration: TextDecoration.underline,
+                                ),
+                                recognizer: TapGestureRecognizer()
+                                  ..onTap = () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => const TermsAndConditionsScreen(),
+                                      ),
+                                    );
+                                  },
+                              ),
+                              const TextSpan(text: ' de uso de MercaTico'),
+                            ],
                           ),
                         ),
                       ),
