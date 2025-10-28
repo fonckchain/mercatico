@@ -1,0 +1,14 @@
+mercatico_app/.dart_tool/
+mercatico_app/build/
+mercatico_app/.flutter-plugins
+mercatico_app/.flutter-plugins-dependencies
+mercatico_app/.packages
+mercatico_app/pubspec.lock
+mercatico_app/android/
+mercatico_app/ios/
+mercatico_app/linux/
+mercatico_app/macos/
+mercatico_app/windows/
+mercatico_app/test/
+Dockerfile
+nginx.conf

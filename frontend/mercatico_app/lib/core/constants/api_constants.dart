@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 /// Constantes de API para MercaTico
 class ApiConstants {
   // Production URL
-  static const String productionUrl = 'https://mercatico-production.up.railway.app/api';
+  static const String productionUrl = 'https://api.mercatico.net/api';
 
   // Development URLs (for local testing)
   static const String devUrl = 'http://127.0.0.1:8000/api';
@@ -80,7 +80,7 @@ class ApiConstants {
         return 'http://127.0.0.1:8000/health/';
       }
     }
-    return 'https://mercatico-production.up.railway.app/health/';
+    return 'https://api.mercatico.net/health/';
   }
 
   // Headers
