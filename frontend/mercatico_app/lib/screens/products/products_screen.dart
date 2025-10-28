@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import '../../core/services/api_service.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/services/cart_service.dart';
@@ -19,21 +20,60 @@ class _ProductsScreenState extends State<ProductsScreen> {
   final ApiService _apiService = ApiService();
   final AuthService _authService = AuthService();
   final CartService _cartService = CartService();
+  final TextEditingController _searchController = TextEditingController();
+  Timer? _debounce;
 
   List<Product> _products = [];
+  List<Map<String, dynamic>> _categories = [];
   bool _isLoading = true;
+  bool _isLoadingCategories = true;
   String? _errorMessage;
   String _searchQuery = '';
+  String? _selectedCategory;
+  bool _isLoggedIn = false;
 
   @override
   void initState() {
     super.initState();
+    _checkLoginStatus();
     _initializeCart();
+    _loadCategories();
     _loadProducts();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _checkLoginStatus() async {
+    final isLoggedIn = await _authService.isLoggedIn();
+    setState(() {
+      _isLoggedIn = isLoggedIn;
+    });
   }
 
   Future<void> _initializeCart() async {
     await _cartService.initialize();
+  }
+
+  Future<void> _loadCategories() async {
+    try {
+      final response = await _apiService.getCategories();
+      if (response['results'] != null) {
+        setState(() {
+          _categories = List<Map<String, dynamic>>.from(response['results']);
+          _isLoadingCategories = false;
+        });
+      }
+    } catch (e) {
+      print('Error loading categories: $e');
+      setState(() {
+        _isLoadingCategories = false;
+      });
+    }
   }
 
   Future<void> _loadProducts() async {
@@ -45,6 +85,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
     try {
       final response = await _apiService.getProducts(
         search: _searchQuery.isNotEmpty ? _searchQuery : null,
+        category: _selectedCategory,
       );
 
       if (response['results'] != null) {
@@ -68,6 +109,25 @@ class _ProductsScreenState extends State<ProductsScreen> {
     }
   }
 
+  void _onSearchChanged(String query) {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      setState(() {
+        _searchQuery = query;
+      });
+      _loadProducts();
+    });
+  }
+
+  void _clearFilters() {
+    setState(() {
+      _searchQuery = '';
+      _selectedCategory = null;
+      _searchController.clear();
+    });
+    _loadProducts();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -76,57 +136,73 @@ class _ProductsScreenState extends State<ProductsScreen> {
         backgroundColor: Colors.green,
         foregroundColor: Colors.white,
         actions: [
-          IconButton(
-            icon: Badge(
-              label: Text('${_cartService.itemCount}'),
-              isLabelVisible: _cartService.itemCount > 0,
-              child: const Icon(Icons.shopping_cart),
+          if (_isLoggedIn) ...[
+            IconButton(
+              icon: Badge(
+                label: Text('${_cartService.itemCount}'),
+                isLabelVisible: _cartService.itemCount > 0,
+                child: const Icon(Icons.shopping_cart),
+              ),
+              onPressed: () async {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const CartScreen(),
+                  ),
+                );
+                setState(() {});
+              },
             ),
-            onPressed: () async {
-              await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const CartScreen(),
-                ),
-              );
-              // Refresh to update badge count
-              setState(() {});
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.receipt_long),
-            tooltip: 'Mis Compras',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const PurchaseHistoryScreen(),
-                ),
-              );
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.person),
-            tooltip: 'Mi Perfil',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const BuyerProfileScreen(),
-                ),
-              );
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: 'Cerrar sesión',
-            onPressed: () async {
-              await _authService.logout();
-              if (context.mounted) {
-                Navigator.of(context).pushReplacementNamed('/login');
-              }
-            },
-          ),
+            IconButton(
+              icon: const Icon(Icons.receipt_long),
+              tooltip: 'Mis Compras',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const PurchaseHistoryScreen(),
+                  ),
+                );
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.person),
+              tooltip: 'Mi Perfil',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const BuyerProfileScreen(),
+                  ),
+                );
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.logout),
+              tooltip: 'Cerrar sesión',
+              onPressed: () async {
+                await _authService.logout();
+                if (context.mounted) {
+                  Navigator.of(context).pushReplacementNamed('/login');
+                }
+              },
+            ),
+          ] else ...[
+            TextButton.icon(
+              icon: const Icon(Icons.login, color: Colors.white),
+              label: const Text('Iniciar Sesión', style: TextStyle(color: Colors.white)),
+              onPressed: () {
+                Navigator.of(context).pushNamed('/login');
+              },
+            ),
+            TextButton.icon(
+              icon: const Icon(Icons.person_add, color: Colors.white),
+              label: const Text('Registrarse', style: TextStyle(color: Colors.white)),
+              onPressed: () {
+                Navigator.of(context).pushNamed('/register');
+              },
+            ),
+          ],
         ],
       ),
       body: Column(
@@ -135,13 +211,15 @@ class _ProductsScreenState extends State<ProductsScreen> {
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: TextField(
+              controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'Buscar productos...',
+                hintText: 'Buscar por producto o vendedor...',
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: _searchQuery.isNotEmpty
                     ? IconButton(
                         icon: const Icon(Icons.clear),
                         onPressed: () {
+                          _searchController.clear();
                           setState(() {
                             _searchQuery = '';
                           });
@@ -153,16 +231,67 @@ class _ProductsScreenState extends State<ProductsScreen> {
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              onChanged: (value) {
-                setState(() {
-                  _searchQuery = value;
-                });
-              },
-              onSubmitted: (value) {
-                _loadProducts();
-              },
+              onChanged: _onSearchChanged,
             ),
           ),
+
+          // Filtro de categorías
+          if (!_isLoadingCategories && _categories.isNotEmpty)
+            Container(
+              height: 50,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      children: [
+                        // Chip para "Todas"
+                        Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: FilterChip(
+                            label: const Text('Todas'),
+                            selected: _selectedCategory == null,
+                            onSelected: (selected) {
+                              setState(() {
+                                _selectedCategory = null;
+                              });
+                              _loadProducts();
+                            },
+                            selectedColor: Colors.green.shade100,
+                          ),
+                        ),
+                        // Chips de categorías
+                        ..._categories.map((category) {
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: FilterChip(
+                              label: Text(category['name']),
+                              selected: _selectedCategory == category['id'],
+                              onSelected: (selected) {
+                                setState(() {
+                                  _selectedCategory = selected ? category['id'] : null;
+                                });
+                                _loadProducts();
+                              },
+                              selectedColor: Colors.green.shade100,
+                            ),
+                          );
+                        }).toList(),
+                      ],
+                    ),
+                  ),
+                  if (_selectedCategory != null || _searchQuery.isNotEmpty)
+                    IconButton(
+                      icon: const Icon(Icons.clear_all),
+                      tooltip: 'Limpiar filtros',
+                      onPressed: _clearFilters,
+                    ),
+                ],
+              ),
+            ),
+
+          const Divider(height: 1),
 
           // Lista de productos
           Expanded(
@@ -193,8 +322,35 @@ class _ProductsScreenState extends State<ProductsScreen> {
                         ),
                       )
                     : _products.isEmpty
-                        ? const Center(
-                            child: Text('No se encontraron productos'),
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.search_off,
+                                  size: 64,
+                                  color: Colors.grey.shade400,
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  _searchQuery.isNotEmpty || _selectedCategory != null
+                                      ? 'No se encontraron productos con estos filtros'
+                                      : 'No hay productos disponibles',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                ),
+                                if (_searchQuery.isNotEmpty || _selectedCategory != null) ...[
+                                  const SizedBox(height: 16),
+                                  ElevatedButton.icon(
+                                    onPressed: _clearFilters,
+                                    icon: const Icon(Icons.clear),
+                                    label: const Text('Limpiar filtros'),
+                                  ),
+                                ],
+                              ],
+                            ),
                           )
                         : RefreshIndicator(
                             onRefresh: _loadProducts,
@@ -248,9 +404,9 @@ class _ProductCard extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -258,28 +414,18 @@ class _ProductCard extends StatelessWidget {
             Expanded(
               child: Container(
                 width: double.infinity,
-                decoration: BoxDecoration(
-                  color: Colors.grey[200],
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(12),
-                  ),
-                ),
-                child: product.imageUrl != null
-                    ? ClipRRect(
-                        borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(12),
-                        ),
-                        child: Image.network(
-                          product.imageUrl!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return const Icon(
-                              Icons.image_not_supported,
-                              size: 48,
-                              color: Colors.grey,
-                            );
-                          },
-                        ),
+                color: Colors.grey[200],
+                child: product.images.isNotEmpty
+                    ? Image.network(
+                        product.images.first.imageUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Icon(
+                            Icons.image_not_supported,
+                            size: 48,
+                            color: Colors.grey,
+                          );
+                        },
                       )
                     : const Icon(
                         Icons.shopping_bag,
@@ -297,46 +443,31 @@ class _ProductCard extends StatelessWidget {
                 children: [
                   Text(
                     product.name,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 14,
                     ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    product.formattedPrice,
-                    style: const TextStyle(
-                      color: Colors.green,
-                      fontWeight: FontWeight.bold,
+                    '₡${product.price.toStringAsFixed(2)}',
+                    style: TextStyle(
                       fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.green.shade700,
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Icon(
-                        product.hasStock ? Icons.check_circle : Icons.cancel,
-                        size: 14,
-                        color: product.hasStock ? Colors.green : Colors.red,
-                      ),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          product.hasStock
-                              ? (product.showStock
-                                  ? '${product.stock} disponibles'
-                                  : 'Disponible')
-                              : 'Sin stock',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[600],
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
+                  const SizedBox(height: 2),
+                  Text(
+                    product.sellerName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.grey.shade600,
+                    ),
                   ),
                 ],
               ),
