@@ -354,27 +354,56 @@ class _ProductsScreenState extends State<ProductsScreen> {
                           )
                         : RefreshIndicator(
                             onRefresh: _loadProducts,
-                            child: GridView.builder(
-                              padding: const EdgeInsets.all(16),
-                              gridDelegate:
-                                  const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 2,
-                                childAspectRatio: 0.7,
-                                crossAxisSpacing: 16,
-                                mainAxisSpacing: 16,
-                              ),
-                              itemCount: _products.length,
-                              itemBuilder: (context, index) {
-                                return _ProductCard(
-                                  product: _products[index],
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => ProductDetailScreen(
-                                          productId: _products[index].id,
-                                        ),
-                                      ),
+                            child: LayoutBuilder(
+                              builder: (context, constraints) {
+                                // Calcular número de columnas basado en el ancho
+                                int crossAxisCount;
+                                double cardWidth;
+
+                                if (constraints.maxWidth > 1200) {
+                                  // Desktop grande: 6 columnas
+                                  crossAxisCount = 6;
+                                  cardWidth = 200;
+                                } else if (constraints.maxWidth > 900) {
+                                  // Desktop: 5 columnas
+                                  crossAxisCount = 5;
+                                  cardWidth = 200;
+                                } else if (constraints.maxWidth > 700) {
+                                  // Tablet landscape: 4 columnas
+                                  crossAxisCount = 4;
+                                  cardWidth = 200;
+                                } else if (constraints.maxWidth > 500) {
+                                  // Tablet portrait: 3 columnas
+                                  crossAxisCount = 3;
+                                  cardWidth = 180;
+                                } else {
+                                  // Móvil: 2 columnas
+                                  crossAxisCount = 2;
+                                  cardWidth = 160;
+                                }
+
+                                return GridView.builder(
+                                  padding: const EdgeInsets.all(16),
+                                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: crossAxisCount,
+                                    childAspectRatio: 0.75,
+                                    crossAxisSpacing: 12,
+                                    mainAxisSpacing: 12,
+                                  ),
+                                  itemCount: _products.length,
+                                  itemBuilder: (context, index) {
+                                    return _ProductCard(
+                                      product: _products[index],
+                                      onTap: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => ProductDetailScreen(
+                                              productId: _products[index].id,
+                                            ),
+                                          ),
+                                        );
+                                      },
                                     );
                                   },
                                 );
@@ -440,6 +469,7 @@ class _ProductCard extends StatelessWidget {
               padding: const EdgeInsets.all(8.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     product.name,
@@ -447,14 +477,14 @@ class _ProductCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
-                      fontSize: 14,
+                      fontSize: 13,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     '₡${product.price.toStringAsFixed(2)}',
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: 15,
                       fontWeight: FontWeight.bold,
                       color: Colors.green.shade700,
                     ),
@@ -465,7 +495,7 @@ class _ProductCard extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      fontSize: 11,
+                      fontSize: 10,
                       color: Colors.grey.shade600,
                     ),
                   ),
