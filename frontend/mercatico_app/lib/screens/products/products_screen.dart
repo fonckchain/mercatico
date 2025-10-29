@@ -49,7 +49,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
   }
 
   Future<void> _checkLoginStatus() async {
-    final isLoggedIn = await _authService.isLoggedIn();
+    final isLoggedIn = await _authService.isAuthenticated();
     setState(() {
       _isLoggedIn = isLoggedIn;
     });
@@ -417,7 +417,7 @@ class _ProductCard extends StatelessWidget {
                 color: Colors.grey[200],
                 child: product.images.isNotEmpty
                     ? Image.network(
-                        product.images.first.imageUrl,
+                        product.images.first,
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) {
                           return const Icon(
