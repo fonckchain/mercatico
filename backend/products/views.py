@@ -139,38 +139,54 @@ class ProductViewSet(viewsets.ModelViewSet):
         serializer.save()
 
     def perform_destroy(self, instance):
-        """Only allow sellers to delete their own products."""
+        """
+        Mark product as inactive instead of deleting.
+
+        Products cannot be deleted if they have associated orders (PROTECT constraint).
+        Instead, we mark them as inactive to prevent deletion errors while preserving
+        order history.
+        """
         if instance.seller != self.request.user:
             from rest_framework.exceptions import PermissionDenied
             raise PermissionDenied("No puedes eliminar productos de otros vendedores")
 
-        # Eliminar todas las imágenes del storage antes de borrar el producto
-        if instance.images:
-            from django.core.files.storage import default_storage
-            print(f"🗑️  Deleting {len(instance.images)} images from storage (product deletion)")
+        # Check if product has any associated orders
+        if instance.order_items.exists():
+            # Mark as inactive instead of deleting to preserve order history
+            instance.is_active = False
+            instance.stock = 0
+            instance.save()
+            print(f"ℹ️  Product {instance.id} marked as inactive (has {instance.order_items.count()} order items)")
+        else:
+            # No orders, safe to delete completely
+            # First delete images from storage
+            if instance.images:
+                from django.core.files.storage import default_storage
+                print(f"🗑️  Deleting {len(instance.images)} images from storage (product deletion)")
 
-            for image_url in instance.images:
-                try:
-                    # Extraer el path del archivo de la URL
-                    if 'supabase.co/storage/v1/object/public/' in image_url:
-                        path_parts = image_url.split('/object/public/')
-                        if len(path_parts) > 1:
-                            full_path = path_parts[1]
-                            file_path = '/'.join(full_path.split('/')[1:])
-                            file_path = file_path.split('?')[0]
+                for image_url in instance.images:
+                    try:
+                        # Extraer el path del archivo de la URL
+                        if 'supabase.co/storage/v1/object/public/' in image_url:
+                            path_parts = image_url.split('/object/public/')
+                            if len(path_parts) > 1:
+                                full_path = path_parts[1]
+                                file_path = '/'.join(full_path.split('/')[1:])
+                                file_path = file_path.split('?')[0]
 
+                                print(f"🗑️  Deleting from storage: {file_path}")
+                                default_storage.delete(file_path)
+                                print(f"✅ Deleted: {file_path}")
+                        elif image_url.startswith('/media/'):
+                            file_path = image_url.replace('/media/', '')
                             print(f"🗑️  Deleting from storage: {file_path}")
                             default_storage.delete(file_path)
                             print(f"✅ Deleted: {file_path}")
-                    elif image_url.startswith('/media/'):
-                        file_path = image_url.replace('/media/', '')
-                        print(f"🗑️  Deleting from storage: {file_path}")
-                        default_storage.delete(file_path)
-                        print(f"✅ Deleted: {file_path}")
-                except Exception as e:
-                    print(f"⚠️  Error deleting image {image_url}: {e}")
+                    except Exception as e:
+                        print(f"⚠️  Error deleting image {image_url}: {e}")
 
-        instance.delete()
+            instance.delete()
+            print(f"✅ Product {instance.id} deleted completely")
 
     def retrieve(self, request, *args, **kwargs):
         """Increment view count when retrieving a product."""
