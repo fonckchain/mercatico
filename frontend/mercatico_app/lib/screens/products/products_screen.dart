@@ -31,6 +31,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
   String _searchQuery = '';
   String? _selectedCategory;
   bool _isLoggedIn = false;
+  String? _userType;
 
   @override
   void initState() {
@@ -50,9 +51,33 @@ class _ProductsScreenState extends State<ProductsScreen> {
 
   Future<void> _checkLoginStatus() async {
     final isLoggedIn = await _authService.isAuthenticated();
-    setState(() {
-      _isLoggedIn = isLoggedIn;
-    });
+    if (isLoggedIn) {
+      try {
+        final userData = await _apiService.getCurrentUser();
+        setState(() {
+          _isLoggedIn = true;
+          _userType = userData['user_type'];
+        });
+
+        // Redirect sellers to their products page
+        if (_userType == 'SELLER') {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              Navigator.of(context).pushReplacementNamed('/home');
+            }
+          });
+        }
+      } catch (e) {
+        print('Error getting user data: $e');
+        setState(() {
+          _isLoggedIn = false;
+        });
+      }
+    } else {
+      setState(() {
+        _isLoggedIn = false;
+      });
+    }
   }
 
   Future<void> _initializeCart() async {
@@ -136,7 +161,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
         backgroundColor: Colors.green,
         foregroundColor: Colors.white,
         actions: [
-          if (_isLoggedIn) ...[
+          if (_isLoggedIn && _userType == 'BUYER') ...[
             IconButton(
               icon: Badge(
                 label: Text('${_cartService.itemCount}'),
@@ -184,6 +209,24 @@ class _ProductsScreenState extends State<ProductsScreen> {
                 await _authService.logout();
                 if (context.mounted) {
                   Navigator.of(context).pushReplacementNamed('/login');
+                }
+              },
+            ),
+          ] else if (_isLoggedIn && _userType == 'SELLER') ...[
+            TextButton.icon(
+              icon: const Icon(Icons.store, color: Colors.white),
+              label: const Text('Ir a Mis Productos', style: TextStyle(color: Colors.white)),
+              onPressed: () {
+                Navigator.of(context).pushReplacementNamed('/home');
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.logout),
+              tooltip: 'Cerrar sesión',
+              onPressed: () async {
+                await _authService.logout();
+                if (context.mounted) {
+                  Navigator.of(context).pushReplacementNamed('/');
                 }
               },
             ),
