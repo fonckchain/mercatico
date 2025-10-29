@@ -58,15 +58,6 @@ class _ProductsScreenState extends State<ProductsScreen> {
           _isLoggedIn = true;
           _userType = userData['user_type'];
         });
-
-        // Redirect sellers to their products page
-        if (_userType == 'SELLER') {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) {
-              Navigator.of(context).pushReplacementNamed('/home');
-            }
-          });
-        }
       } catch (e) {
         print('Error getting user data: $e');
         setState(() {

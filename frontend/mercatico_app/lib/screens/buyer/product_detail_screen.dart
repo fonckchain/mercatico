@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/product.dart';
 import '../../core/services/api_service.dart';
+import '../../core/services/auth_service.dart';
 import '../../core/services/cart_service.dart';
 import 'cart_screen.dart';
 
@@ -18,17 +19,34 @@ class ProductDetailScreen extends StatefulWidget {
 
 class _ProductDetailScreenState extends State<ProductDetailScreen> {
   final ApiService _apiService = ApiService();
+  final AuthService _authService = AuthService();
   final CartService _cartService = CartService();
   Product? _product;
   bool _isLoading = true;
   String? _errorMessage;
   int _selectedQuantity = 1;
   int _currentImageIndex = 0; // Para el carrusel de imágenes
+  String? _userType;
 
   @override
   void initState() {
     super.initState();
+    _checkUserType();
     _loadProductDetail();
+  }
+
+  Future<void> _checkUserType() async {
+    final isLoggedIn = await _authService.isAuthenticated();
+    if (isLoggedIn) {
+      try {
+        final userData = await _apiService.getCurrentUser();
+        setState(() {
+          _userType = userData['user_type'];
+        });
+      } catch (e) {
+        print('Error getting user data: $e');
+      }
+    }
   }
 
   Future<void> _loadProductDetail() async {
@@ -278,13 +296,38 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                   const SizedBox(height: 24),
                                 ],
 
-                                // Add to Cart Button
-                                SizedBox(
-                                  width: double.infinity,
-                                  height: 50,
-                                  child: ElevatedButton.icon(
-                                    onPressed: _product!.hasStock
-                                        ? () async {
+                                // Add to Cart Button (only for buyers)
+                                if (_userType == 'SELLER')
+                                  Container(
+                                    padding: const EdgeInsets.all(16),
+                                    decoration: BoxDecoration(
+                                      color: Colors.orange.shade50,
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(color: Colors.orange.shade200),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.info_outline, color: Colors.orange.shade700),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Text(
+                                            'Como vendedor, puedes ver productos pero no comprar',
+                                            style: TextStyle(
+                                              color: Colors.orange.shade900,
+                                              fontSize: 14,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  )
+                                else
+                                  SizedBox(
+                                    width: double.infinity,
+                                    height: 50,
+                                    child: ElevatedButton.icon(
+                                      onPressed: _product!.hasStock
+                                          ? () async {
                                             final error = await _cartService.addItem(
                                               _product!,
                                               quantity: _selectedQuantity,
