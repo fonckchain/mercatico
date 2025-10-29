@@ -152,11 +152,11 @@ class ProductViewSet(viewsets.ModelViewSet):
 
         # Check if product has any associated orders
         if instance.order_items.exists():
-            # Mark as inactive instead of deleting to preserve order history
-            instance.is_active = False
+            # Mark as unavailable instead of deleting to preserve order history
+            instance.is_available = False
             instance.stock = 0
             instance.save()
-            print(f"ℹ️  Product {instance.id} marked as inactive (has {instance.order_items.count()} order items)")
+            print(f"ℹ️  Product {instance.id} marked as unavailable (has {instance.order_items.count()} order items)")
         else:
             # No orders, safe to delete completely
             # First delete images from storage
@@ -197,7 +197,12 @@ class ProductViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'])
     def my_products(self, request):
-        """Get products of the current seller."""
+        """
+        Get products of the current seller.
+
+        Query params:
+        - include_inactive: if 'true', include unavailable products (default: false)
+        """
         if request.user.user_type != 'SELLER':
             return Response(
                 {'error': 'Solo vendedores pueden acceder a esta funcionalidad'},
@@ -205,6 +210,12 @@ class ProductViewSet(viewsets.ModelViewSet):
             )
 
         queryset = self.get_queryset().filter(seller=request.user)
+
+        # By default, only show available products unless explicitly requested
+        include_inactive = request.query_params.get('include_inactive', 'false').lower() == 'true'
+        if not include_inactive:
+            queryset = queryset.filter(is_available=True)
+
         page = self.paginate_queryset(queryset)
 
         if page is not None:
