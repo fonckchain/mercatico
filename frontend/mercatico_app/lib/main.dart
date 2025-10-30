@@ -4,6 +4,7 @@ import 'screens/auth/login_screen.dart';
 import 'screens/auth/register_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/products/products_screen.dart';
+import 'screens/seller/my_products_screen.dart';
 import 'core/services/auth_service.dart';
 
 void main() async {
@@ -35,6 +36,7 @@ class MyApp extends StatelessWidget {
         '/login': (context) => const LoginScreen(),
         '/register': (context) => const RegisterScreen(),
         '/home': (context) => const HomeScreen(),
+        '/my-products': (context) => const MyProductsScreen(),
         '/api-test': (context) => const ApiTestScreen(),
       },
     );

@@ -121,6 +121,13 @@ class _MyProductsScreenState extends State<MyProductsScreen> {
         backgroundColor: Colors.green,
         foregroundColor: Colors.white,
         actions: [
+          TextButton.icon(
+            icon: const Icon(Icons.storefront, color: Colors.white),
+            label: const Text('Ver Catálogo', style: TextStyle(color: Colors.white)),
+            onPressed: () {
+              Navigator.of(context).pushNamed('/');
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.receipt_long),
             tooltip: 'Mis Ventas',

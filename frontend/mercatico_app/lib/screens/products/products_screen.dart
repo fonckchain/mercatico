@@ -206,9 +206,9 @@ class _ProductsScreenState extends State<ProductsScreen> {
           ] else if (_isLoggedIn && _userType == 'SELLER') ...[
             TextButton.icon(
               icon: const Icon(Icons.store, color: Colors.white),
-              label: const Text('Ir a Mis Productos', style: TextStyle(color: Colors.white)),
+              label: const Text('Mis Productos', style: TextStyle(color: Colors.white)),
               onPressed: () {
-                Navigator.of(context).pushReplacementNamed('/home');
+                Navigator.of(context).pushNamed('/my-products');
               },
             ),
             IconButton(
