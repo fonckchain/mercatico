@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../core/services/api_service.dart';
-import '../../core/services/auth_service.dart';
 import '../../models/product.dart';
+import '../../widgets/seller_app_bar.dart';
 import 'product_form_screen.dart';
-import 'seller_profile_screen.dart';
-import 'sales_history_screen.dart';
 
 class MyProductsScreen extends StatefulWidget {
   const MyProductsScreen({super.key});
@@ -15,7 +13,6 @@ class MyProductsScreen extends StatefulWidget {
 
 class _MyProductsScreenState extends State<MyProductsScreen> {
   final ApiService _apiService = ApiService();
-  final AuthService _authService = AuthService();
 
   List<Product> _myProducts = [];
   bool _isLoading = true;
@@ -113,69 +110,7 @@ class _MyProductsScreenState extends State<MyProductsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: InkWell(
-          onTap: () {
-            Navigator.of(context).pushNamed('/');
-          },
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: const [
-              Icon(Icons.store, size: 28),
-              SizedBox(width: 8),
-              Text('MercaTico', style: TextStyle(fontWeight: FontWeight.bold)),
-            ],
-          ),
-        ),
-        backgroundColor: Colors.green,
-        foregroundColor: Colors.white,
-        actions: [
-          TextButton.icon(
-            icon: const Icon(Icons.inventory, color: Colors.white),
-            label: const Text('Mis Productos', style: TextStyle(color: Colors.white)),
-            onPressed: () {
-              // Ya estamos en Mis Productos, no hacer nada o scroll to top
-            },
-            style: TextButton.styleFrom(
-              backgroundColor: Colors.green.shade700,
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.receipt_long),
-            tooltip: 'Mis Ventas',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const SalesHistoryScreen(),
-                ),
-              );
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.person),
-            tooltip: 'Mi Perfil',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const SellerProfileScreen(),
-                ),
-              );
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: 'Cerrar sesión',
-            onPressed: () async {
-              await _authService.logout();
-              if (context.mounted) {
-                Navigator.of(context).pushReplacementNamed('/login');
-              }
-            },
-          ),
-        ],
-      ),
+      appBar: SellerAppBar(),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _errorMessage != null

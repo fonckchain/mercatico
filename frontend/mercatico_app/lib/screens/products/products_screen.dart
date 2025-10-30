@@ -228,14 +228,14 @@ class _ProductsScreenState extends State<ProductsScreen> {
               icon: const Icon(Icons.inventory, color: Colors.white),
               label: const Text('Mis Productos', style: TextStyle(color: Colors.white)),
               onPressed: () {
-                Navigator.of(context).pushNamed('/my-products');
+                Navigator.of(context).pushReplacementNamed('/my-products');
               },
             ),
-            IconButton(
-              icon: const Icon(Icons.receipt_long),
-              tooltip: 'Mis Ventas',
+            TextButton.icon(
+              icon: const Icon(Icons.receipt_long, color: Colors.white),
+              label: const Text('Mis Ventas', style: TextStyle(color: Colors.white)),
               onPressed: () {
-                Navigator.push(
+                Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(
                     builder: (context) => const SalesHistoryScreen(),
@@ -243,11 +243,11 @@ class _ProductsScreenState extends State<ProductsScreen> {
                 );
               },
             ),
-            IconButton(
-              icon: const Icon(Icons.person),
-              tooltip: 'Mi Perfil',
+            TextButton.icon(
+              icon: const Icon(Icons.person, color: Colors.white),
+              label: const Text('Mi Perfil', style: TextStyle(color: Colors.white)),
               onPressed: () {
-                Navigator.push(
+                Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(
                     builder: (context) => const SellerProfileScreen(),
