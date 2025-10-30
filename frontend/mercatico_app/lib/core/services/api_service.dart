@@ -161,6 +161,20 @@ class ApiService {
     await _dio.delete(ApiConstants.productDetail(id));
   }
 
+  /// Obtener mis productos (vendedores)
+  Future<Map<String, dynamic>> getMyProducts({bool includeInactive = false}) async {
+    final queryParams = <String, dynamic>{};
+    if (includeInactive) {
+      queryParams['include_inactive'] = 'true';
+    }
+
+    final response = await _dio.get(
+      '${ApiConstants.products}my_products/',
+      queryParameters: queryParams,
+    );
+    return response.data;
+  }
+
   /// Subir imágenes a un producto
   Future<Map<String, dynamic>> uploadProductImages(
     String productId,

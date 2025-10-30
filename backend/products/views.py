@@ -83,8 +83,9 @@ class ProductViewSet(viewsets.ModelViewSet):
         if max_price:
             queryset = queryset.filter(price__lte=max_price)
 
-        # Only show available products for non-owners
-        if not self.request.user.is_authenticated:
+        # For list and retrieve actions, only show available products
+        # The my_products action handles its own filtering
+        if self.action in ['list', 'retrieve']:
             queryset = queryset.filter(is_available=True, stock__gt=0)
 
         return queryset

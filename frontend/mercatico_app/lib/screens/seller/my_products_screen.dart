@@ -34,12 +34,9 @@ class _MyProductsScreenState extends State<MyProductsScreen> {
     });
 
     try {
-      // Obtener usuario actual para filtrar por seller
-      final userData = await _apiService.getCurrentUser();
-      final sellerId = userData['id'];
-
-      // Obtener productos del vendedor
-      final response = await _apiService.getProducts(seller: sellerId);
+      // Obtener productos del vendedor usando el endpoint my_products
+      // includeInactive: false para solo mostrar productos activos
+      final response = await _apiService.getMyProducts(includeInactive: false);
 
       if (response['results'] != null) {
         setState(() {
