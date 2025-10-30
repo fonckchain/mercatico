@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/api_constants.dart';
 
 /// Servicio centralizado para llamadas a la API (Singleton)
@@ -23,9 +24,19 @@ class ApiService {
     // Interceptor para agregar token automáticamente
     _dio.interceptors.add(
       InterceptorsWrapper(
-        onRequest: (options, handler) {
+        onRequest: (options, handler) async {
           print('🌐 API Request: ${options.method} ${options.uri}');
           print('📦 Request Data: ${options.data}');
+
+          // Si no hay token en memoria, intentar cargarlo de SharedPreferences
+          if (_accessToken == null) {
+            final prefs = await SharedPreferences.getInstance();
+            _accessToken = prefs.getString('access_token');
+            if (_accessToken != null) {
+              print('🔑 Token cargado desde SharedPreferences');
+            }
+          }
+
           if (_accessToken != null) {
             options.headers['Authorization'] = 'Bearer $_accessToken';
           }
