@@ -150,6 +150,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false, // Remove back button
         title: InkWell(
           onTap: () {
             // Si ya estamos en el catálogo, scroll to top
