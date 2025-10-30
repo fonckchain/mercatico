@@ -8,6 +8,8 @@ import '../buyer/product_detail_screen.dart';
 import '../buyer/cart_screen.dart';
 import '../buyer/buyer_profile_screen.dart';
 import '../buyer/purchase_history_screen.dart';
+import '../seller/sales_history_screen.dart';
+import '../seller/seller_profile_screen.dart';
 
 class ProductsScreen extends StatefulWidget {
   const ProductsScreen({super.key});
@@ -148,7 +150,25 @@ class _ProductsScreenState extends State<ProductsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('MercaTico'),
+        title: InkWell(
+          onTap: () {
+            // Si ya estamos en el catálogo, scroll to top
+            // Si no, navegar al catálogo
+            if (ModalRoute.of(context)?.settings.name == '/') {
+              // Ya estamos en home, hacer scroll to top si hay scroll controller
+            } else {
+              Navigator.of(context).pushReplacementNamed('/');
+            }
+          },
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: const [
+              Icon(Icons.store, size: 28),
+              SizedBox(width: 8),
+              Text('MercaTico', style: TextStyle(fontWeight: FontWeight.bold)),
+            ],
+          ),
+        ),
         backgroundColor: Colors.green,
         foregroundColor: Colors.white,
         actions: [
@@ -205,10 +225,34 @@ class _ProductsScreenState extends State<ProductsScreen> {
             ),
           ] else if (_isLoggedIn && _userType == 'SELLER') ...[
             TextButton.icon(
-              icon: const Icon(Icons.store, color: Colors.white),
+              icon: const Icon(Icons.inventory, color: Colors.white),
               label: const Text('Mis Productos', style: TextStyle(color: Colors.white)),
               onPressed: () {
                 Navigator.of(context).pushNamed('/my-products');
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.receipt_long),
+              tooltip: 'Mis Ventas',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const SalesHistoryScreen(),
+                  ),
+                );
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.person),
+              tooltip: 'Mi Perfil',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const SellerProfileScreen(),
+                  ),
+                );
               },
             ),
             IconButton(
