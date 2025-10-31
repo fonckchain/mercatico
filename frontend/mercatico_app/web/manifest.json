@@ -1,11 +1,11 @@
 {
-    "name": "mercatico_app",
-    "short_name": "mercatico_app",
+    "name": "MercaTico - Marketplace Local",
+    "short_name": "MercaTico",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#4CAF50",
+    "theme_color": "#4CAF50",
+    "description": "Marketplace local de Costa Rica - Compra y vende productos localmente",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
