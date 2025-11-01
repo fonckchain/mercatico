@@ -1,41 +1,25 @@
 # Configuración de Íconos y Logo de la App
 
-## Estado Actual
+## ✅ Estado Actual - LOGOS GENERADOS
 
-He configurado todo el sistema para generar automáticamente los íconos de la app. Solo necesitas crear las imágenes del logo.
+He configurado todo el sistema Y generado los logos automáticamente usando el mismo ícono de tienda (`Icons.store`) que aparece en la barra de navegación.
 
-## Pasos para Completar la Configuración
+**✅ Los logos ya están creados:**
+- `assets/images/logo.png` (1024x1024px con fondo verde)
+- `assets/images/logo_foreground.png` (1024x1024px solo ícono blanco)
 
-### 1. Crear el Logo
+Ambos usan el mismo diseño que el ícono en la navegación, manteniendo la consistencia visual.
 
-Necesitas crear **2 imágenes** en el directorio `assets/images/`:
+## Pasos para Generar los Íconos de la App
 
-#### a) `logo.png` (1024x1024px)
-- **Tamaño**: 1024x1024 píxeles
-- **Formato**: PNG con fondo transparente
-- **Contenido**: Ícono de tienda (store icon) con el estilo verde de MercaTico (#4CAF50)
-- **Uso**: Ícono principal para Android, iOS y Web
+### 1. ~~Crear el Logo~~ ✅ COMPLETADO
 
-**Opciones para crear:**
-1. **Usar un diseñador gráfico** (recomendado)
-2. **Usar Canva**:
-   - Ve a canva.com
-   - Crear diseño personalizado de 1024x1024
-   - Buscar "store icon" o "shop icon"
-   - Personalizar con color verde (#4CAF50)
-   - Descargar como PNG transparente
+Los logos ya fueron generados usando el script `generate_logo.py` que crea una versión del ícono Material "store" en color verde MercaTico.
 
-3. **Usar Figma/Adobe Illustrator**:
-   - Crear artboard de 1024x1024
-   - Diseñar ícono de tienda minimalista
-   - Exportar como PNG
-
-#### b) `logo_foreground.png` (1024x1024px)
-- **Tamaño**: 1024x1024 píxeles
-- **Formato**: PNG con fondo transparente
-- **Contenido**: Solo el ícono (sin fondo), centrado
-- **Área segura**: El ícono debe estar dentro de un círculo de 432x432 centrado
-- **Uso**: Para Android adaptive icons (el fondo será el color verde)
+Si quieres regenerarlos o personalizarlos:
+```bash
+python3 generate_logo.py
+```
 
 ### 2. Instalar Dependencias
 
