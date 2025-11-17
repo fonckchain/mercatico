@@ -19,8 +19,9 @@ The Django backend on Railway was failing to connect to PostgreSQL, causing:
 - Added statement timeout configuration
 - Improved database connection reliability
 
-### 2. Database Wait Command (`backend/mercatico/management/commands/wait_for_db.py`)
-- New management command that waits for database to be ready
+### 2. Database Wait Script (`backend/wait_for_db.py`)
+- Standalone Python script that waits for database to be ready
+- Can also be used as management command: `python manage.py wait_for_db`
 - Configurable retry attempts (default: 30) and delay (default: 2 seconds)
 - Prevents server startup before database is available
 
