@@ -55,11 +55,42 @@ class ApiService {
           print('📄 Error Response: ${error.response?.data}');
           print('🔍 Error Message: ${error.message}');
 
-          // Manejar errores 401 (no autorizado)
+          // Manejar errores 401 (no autorizado) - intentar refrescar token
           if (error.response?.statusCode == 401) {
-            // TODO: Intentar refrescar el token
-            print('Error 401: Token expirado o inválido');
+            // Evitar loop infinito: no refrescar si ya estamos en el endpoint de refresh
+            final requestPath = error.requestOptions.path;
+            if (requestPath.contains('/token/refresh/') || requestPath == ApiConstants.refresh) {
+              print('⚠️ Error 401 en refresh token, cerrando sesión');
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.remove('access_token');
+              await prefs.remove('refresh_token');
+              _accessToken = null;
+              return handler.next(error);
+            }
+
+            // Intentar refrescar el token
+            print('🔄 Token expirado, intentando refrescar...');
+            final newToken = await refreshToken();
+            
+            if (newToken != null) {
+              // Reintentar la petición original con el nuevo token
+              print('✅ Token refrescado, reintentando petición...');
+              error.requestOptions.headers['Authorization'] = 'Bearer $newToken';
+              
+              try {
+                final response = await _dio.fetch(error.requestOptions);
+                return handler.resolve(response);
+              } catch (e) {
+                print('❌ Error al reintentar petición: $e');
+                return handler.next(error);
+              }
+            } else {
+              // No se pudo refrescar, el usuario necesita hacer login de nuevo
+              print('⚠️ No se pudo refrescar el token');
+              return handler.next(error);
+            }
           }
+          
           return handler.next(error);
         },
       ),
@@ -74,6 +105,42 @@ class ApiService {
   /// Limpiar token de acceso
   void clearAccessToken() {
     _accessToken = null;
+  }
+
+  /// Refrescar token de acceso
+  Future<String?> refreshToken() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final refreshToken = prefs.getString('refresh_token');
+      
+      if (refreshToken == null) {
+        print('⚠️ No hay refresh token disponible');
+        return null;
+      }
+
+      final response = await _dio.post(
+        ApiConstants.refresh,
+        data: {'refresh': refreshToken},
+      );
+
+      if (response.data.containsKey('access')) {
+        final newAccessToken = response.data['access'] as String;
+        await prefs.setString('access_token', newAccessToken);
+        _accessToken = newAccessToken;
+        print('✅ Token refrescado exitosamente');
+        return newAccessToken;
+      }
+      
+      return null;
+    } catch (e) {
+      print('❌ Error al refrescar token: $e');
+      // Si falla el refresh, limpiar tokens
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('access_token');
+      await prefs.remove('refresh_token');
+      _accessToken = null;
+      return null;
+    }
   }
 
   /// Helper method to create MultipartFile that works on web and mobile
@@ -109,6 +176,15 @@ class ApiService {
     final response = await _dio.post(
       ApiConstants.register,
       data: userData,
+    );
+    return response.data;
+  }
+
+  /// Refrescar token de acceso usando refresh token
+  Future<Map<String, dynamic>> refreshTokenEndpoint(String refreshToken) async {
+    final response = await _dio.post(
+      ApiConstants.refresh,
+      data: {'refresh': refreshToken},
     );
     return response.data;
   }

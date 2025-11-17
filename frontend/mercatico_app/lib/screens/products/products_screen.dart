@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'package:dio/dio.dart';
 import '../../core/services/api_service.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/services/cart_service.dart';
@@ -121,10 +122,33 @@ class _ProductsScreenState extends State<ProductsScreen> {
       }
     } catch (e) {
       setState(() {
-        _errorMessage = 'Error al cargar productos: $e';
+        _errorMessage = _getUserFriendlyErrorMessage(e);
         _isLoading = false;
       });
     }
+  }
+
+  /// Convierte errores técnicos en mensajes amigables para el usuario
+  String _getUserFriendlyErrorMessage(dynamic error) {
+    if (error is DioException) {
+      if (error.response?.statusCode == 401) {
+        return 'Tu sesión ha expirado. Por favor, inicia sesión nuevamente.';
+      } else if (error.response?.statusCode == 403) {
+        return 'No tienes permiso para realizar esta acción.';
+      } else if (error.response?.statusCode == 404) {
+        return 'No se encontró el recurso solicitado.';
+      } else if (error.response?.statusCode == 500) {
+        return 'Error del servidor. Por favor, intenta más tarde.';
+      } else if (error.type == DioExceptionType.connectionTimeout ||
+          error.type == DioExceptionType.receiveTimeout) {
+        return 'Tiempo de espera agotado. Verifica tu conexión a internet.';
+      } else if (error.type == DioExceptionType.connectionError) {
+        return 'Error de conexión. Verifica tu conexión a internet.';
+      }
+    }
+    
+    // Mensaje genérico para otros errores
+    return 'Error al cargar los productos. Por favor, intenta nuevamente.';
   }
 
   void _onSearchChanged(String query) {
