@@ -262,9 +262,9 @@ class ApiService {
 
   /// Crear nueva orden
   Future<Map<String, dynamic>> createOrder(
-      Map<String, dynamic> orderData, {String? paymentProofPath}) async {
+      Map<String, dynamic> orderData, {XFile? paymentProofFile}) async {
     // If there's a payment proof image, use FormData
-    if (paymentProofPath != null) {
+    if (paymentProofFile != null) {
       // Create a copy of orderData to modify
       final Map<String, dynamic> formDataMap = {};
 
@@ -278,10 +278,14 @@ class ApiService {
       // Add items as JSON string
       formDataMap['items'] = jsonEncode(orderData['items']);
 
-      // Add payment proof file
-      formDataMap['payment_proof'] = await MultipartFile.fromFile(
-        paymentProofPath,
-        filename: 'payment_proof_${DateTime.now().millisecondsSinceEpoch}.jpg',
+      // Add payment proof file using bytes (compatible with web)
+      final bytes = await paymentProofFile.readAsBytes();
+      final fileName = paymentProofFile.name.split('/').last.split('\\').last;
+      formDataMap['payment_proof'] = MultipartFile.fromBytes(
+        bytes,
+        filename: fileName.isNotEmpty 
+            ? fileName 
+            : 'payment_proof_${DateTime.now().millisecondsSinceEpoch}.jpg',
       );
 
       final formData = FormData.fromMap(formDataMap);
@@ -373,11 +377,20 @@ class ApiService {
   /// Subir comprobante de pago
   Future<Map<String, dynamic>> uploadPaymentReceipt(
     String orderId,
-    String imagePath,
+    XFile imageFile,
   ) async {
+    // Read bytes from XFile (compatible with web)
+    final bytes = await imageFile.readAsBytes();
+    final fileName = imageFile.name.split('/').last.split('\\').last;
+    
     final formData = FormData.fromMap({
       'order_id': orderId,
-      'receipt_image': await MultipartFile.fromFile(imagePath),
+      'receipt_image': MultipartFile.fromBytes(
+        bytes,
+        filename: fileName.isNotEmpty 
+            ? fileName 
+            : 'receipt_${DateTime.now().millisecondsSinceEpoch}.jpg',
+      ),
     });
 
     final response = await _dio.post(

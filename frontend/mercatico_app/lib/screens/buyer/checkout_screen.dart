@@ -1,7 +1,9 @@
+import 'dart:io' show File, Platform;
+import 'dart:typed_data' show Uint8List;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:io';
 import '../../core/services/cart_service.dart';
 import '../../core/services/api_service.dart';
 
@@ -45,7 +47,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   String? _paymentMethod; // 'sinpe' or 'cash'
   bool _isLoading = true;
   bool _isProcessingOrder = false;
-  File? _paymentProofImage;
+  XFile? _paymentProofImage;
 
   // Seller payment preferences
   bool _sellerAcceptsCash = false;
@@ -118,7 +120,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
       if (pickedFile != null) {
         setState(() {
-          _paymentProofImage = File(pickedFile.path);
+          _paymentProofImage = pickedFile;
         });
       }
     } catch (e) {
@@ -197,7 +199,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       // Create order via API
       final createdOrder = await _apiService.createOrder(
         orderData,
-        paymentProofPath: _paymentProofImage?.path,
+        paymentProofFile: _paymentProofImage,
       );
 
       // Clear only this seller's cart after successful order
@@ -561,10 +563,34 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                 ),
                                 child: ClipRRect(
                                   borderRadius: BorderRadius.circular(8),
-                                  child: Image.file(
-                                    _paymentProofImage!,
-                                    fit: BoxFit.cover,
-                                  ),
+                                  child: kIsWeb
+                                      ? FutureBuilder<Uint8List>(
+                                          future: _paymentProofImage!.readAsBytes(),
+                                          builder: (context, snapshot) {
+                                            if (snapshot.connectionState == ConnectionState.waiting) {
+                                              return Container(
+                                                color: Colors.grey.shade200,
+                                                child: const Center(
+                                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                                ),
+                                              );
+                                            }
+                                            if (snapshot.hasError || !snapshot.hasData) {
+                                              return Container(
+                                                color: Colors.grey.shade300,
+                                                child: const Icon(Icons.broken_image, color: Colors.grey),
+                                              );
+                                            }
+                                            return Image.memory(
+                                              snapshot.data!,
+                                              fit: BoxFit.cover,
+                                            );
+                                          },
+                                        )
+                                      : Image.file(
+                                          File(_paymentProofImage!.path),
+                                          fit: BoxFit.cover,
+                                        ),
                                 ),
                               ),
                               const SizedBox(height: 12),
