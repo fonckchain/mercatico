@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'dart:typed_data' show Uint8List;
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/api_constants.dart';
@@ -72,6 +74,20 @@ class ApiService {
   /// Limpiar token de acceso
   void clearAccessToken() {
     _accessToken = null;
+  }
+
+  /// Helper method to create MultipartFile that works on web and mobile
+  Future<MultipartFile> _createMultipartFile(
+    Uint8List bytes,
+    String filename,
+  ) async {
+    // Use Stream.value to create a stream from bytes (works on web)
+    // This approach avoids dart:io dependencies
+    return MultipartFile.fromStream(
+      Stream.value(bytes),
+      bytes.length,
+      filename: filename,
+    );
   }
 
   // ==================== AUTH ====================
@@ -189,14 +205,9 @@ class ApiService {
       // Obtener nombre del archivo (compatible con web y móvil)
       final fileName = xFile.name.split('/').last.split('\\').last;
       
+      final multipartFile = await _createMultipartFile(bytes, fileName);
       formData.files.add(
-        MapEntry(
-          'images',
-          MultipartFile.fromBytes(
-            bytes,
-            filename: fileName,
-          ),
-        ),
+        MapEntry('images', multipartFile),
       );
     }
 
@@ -281,16 +292,17 @@ class ApiService {
       // Add payment proof file using bytes (compatible with web)
       final bytes = await paymentProofFile.readAsBytes();
       final fileName = paymentProofFile.name.split('/').last.split('\\').last;
+      
+      // Create MultipartFile in a way that works on web
+      final multipartFile = await _createMultipartFile(
+        bytes,
+        fileName.isNotEmpty 
+            ? fileName 
+            : 'payment_proof_${DateTime.now().millisecondsSinceEpoch}.jpg',
+      );
+      
       formData.files.add(
-        MapEntry(
-          'payment_proof',
-          MultipartFile.fromBytes(
-            bytes,
-            filename: fileName.isNotEmpty 
-                ? fileName 
-                : 'payment_proof_${DateTime.now().millisecondsSinceEpoch}.jpg',
-          ),
-        ),
+        MapEntry('payment_proof', multipartFile),
       );
 
       final response = await _dio.post(
@@ -389,16 +401,16 @@ class ApiService {
     // Create FormData manually (compatible with web)
     final formData = FormData();
     formData.fields.add(MapEntry('order_id', orderId));
+    
+    final multipartFile = await _createMultipartFile(
+      bytes,
+      fileName.isNotEmpty 
+          ? fileName 
+          : 'receipt_${DateTime.now().millisecondsSinceEpoch}.jpg',
+    );
+    
     formData.files.add(
-      MapEntry(
-        'receipt_image',
-        MultipartFile.fromBytes(
-          bytes,
-          filename: fileName.isNotEmpty 
-              ? fileName 
-              : 'receipt_${DateTime.now().millisecondsSinceEpoch}.jpg',
-        ),
-      ),
+      MapEntry('receipt_image', multipartFile),
     );
 
     final response = await _dio.post(
