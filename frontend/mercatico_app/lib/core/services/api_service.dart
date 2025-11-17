@@ -265,30 +265,33 @@ class ApiService {
       Map<String, dynamic> orderData, {XFile? paymentProofFile}) async {
     // If there's a payment proof image, use FormData
     if (paymentProofFile != null) {
-      // Create a copy of orderData to modify
-      final Map<String, dynamic> formDataMap = {};
+      // Create FormData manually (compatible with web)
+      final formData = FormData();
 
       // Add all fields except items
       orderData.forEach((key, value) {
         if (key != 'items') {
-          formDataMap[key] = value;
+          formData.fields.add(MapEntry(key, value.toString()));
         }
       });
 
       // Add items as JSON string
-      formDataMap['items'] = jsonEncode(orderData['items']);
+      formData.fields.add(MapEntry('items', jsonEncode(orderData['items'])));
 
       // Add payment proof file using bytes (compatible with web)
       final bytes = await paymentProofFile.readAsBytes();
       final fileName = paymentProofFile.name.split('/').last.split('\\').last;
-      formDataMap['payment_proof'] = MultipartFile.fromBytes(
-        bytes,
-        filename: fileName.isNotEmpty 
-            ? fileName 
-            : 'payment_proof_${DateTime.now().millisecondsSinceEpoch}.jpg',
+      formData.files.add(
+        MapEntry(
+          'payment_proof',
+          MultipartFile.fromBytes(
+            bytes,
+            filename: fileName.isNotEmpty 
+                ? fileName 
+                : 'payment_proof_${DateTime.now().millisecondsSinceEpoch}.jpg',
+          ),
+        ),
       );
-
-      final formData = FormData.fromMap(formDataMap);
 
       final response = await _dio.post(
         ApiConstants.orders,
@@ -383,15 +386,20 @@ class ApiService {
     final bytes = await imageFile.readAsBytes();
     final fileName = imageFile.name.split('/').last.split('\\').last;
     
-    final formData = FormData.fromMap({
-      'order_id': orderId,
-      'receipt_image': MultipartFile.fromBytes(
-        bytes,
-        filename: fileName.isNotEmpty 
-            ? fileName 
-            : 'receipt_${DateTime.now().millisecondsSinceEpoch}.jpg',
+    // Create FormData manually (compatible with web)
+    final formData = FormData();
+    formData.fields.add(MapEntry('order_id', orderId));
+    formData.files.add(
+      MapEntry(
+        'receipt_image',
+        MultipartFile.fromBytes(
+          bytes,
+          filename: fileName.isNotEmpty 
+              ? fileName 
+              : 'receipt_${DateTime.now().millisecondsSinceEpoch}.jpg',
+        ),
       ),
-    });
+    );
 
     final response = await _dio.post(
       ApiConstants.paymentUpload,
