@@ -1,11 +1,13 @@
-import 'dart:io';
+import 'dart:io' show File, Platform;
+import 'dart:typed_data' show Uint8List;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 /// Widget para seleccionar y mostrar imágenes de productos
 class ImagePickerWidget extends StatefulWidget {
   final List<String> initialImages; // URLs de imágenes existentes
-  final Function(List<File> selectedFiles, List<String> existingUrls) onImagesChanged;
+  final Function(List<XFile> selectedFiles, List<String> existingUrls) onImagesChanged;
   final int maxImages;
 
   const ImagePickerWidget({
@@ -21,7 +23,7 @@ class ImagePickerWidget extends StatefulWidget {
 
 class _ImagePickerWidgetState extends State<ImagePickerWidget> {
   final ImagePicker _picker = ImagePicker();
-  final List<File> _selectedFiles = [];
+  final List<XFile> _selectedFiles = [];
   late List<String> _existingImages;
 
   @override
@@ -64,7 +66,7 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
 
       if (image != null) {
         setState(() {
-          _selectedFiles.add(File(image.path));
+          _selectedFiles.add(image);
         });
         widget.onImagesChanged(_selectedFiles, _existingImages);
       }
@@ -94,7 +96,7 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
 
         setState(() {
           for (int i = 0; i < imagesToAdd; i++) {
-            _selectedFiles.add(File(images[i].path));
+            _selectedFiles.add(images[i]);
           }
         });
 
@@ -332,7 +334,7 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
   }
 
   Widget _buildNewImageCard(int index) {
-    final file = _selectedFiles[index];
+    final xFile = _selectedFiles[index];
     final globalIndex = _existingImages.length + index;
 
     return Stack(
@@ -340,10 +342,34 @@ class _ImagePickerWidgetState extends State<ImagePickerWidget> {
       children: [
         ClipRRect(
           borderRadius: BorderRadius.circular(8),
-          child: Image.file(
-            file,
-            fit: BoxFit.cover,
-          ),
+          child: kIsWeb
+              ? FutureBuilder<Uint8List>(
+                  future: xFile.readAsBytes(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return Container(
+                        color: Colors.grey.shade200,
+                        child: const Center(
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      );
+                    }
+                    if (snapshot.hasError || !snapshot.hasData) {
+                      return Container(
+                        color: Colors.grey.shade300,
+                        child: const Icon(Icons.broken_image, color: Colors.grey),
+                      );
+                    }
+                    return Image.memory(
+                      snapshot.data!,
+                      fit: BoxFit.cover,
+                    );
+                  },
+                )
+              : Image.file(
+                  File(xFile.path),
+                  fit: BoxFit.cover,
+                ),
         ),
         Positioned(
           top: 4,

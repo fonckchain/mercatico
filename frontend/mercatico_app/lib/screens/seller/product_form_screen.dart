@@ -1,6 +1,6 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../core/services/api_service.dart';
 import '../../models/product.dart';
 import '../../widgets/image_picker_widget.dart';
@@ -39,7 +39,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
   Map<String, String> _categories = {};
 
   // Images
-  List<File> _selectedImageFiles = [];
+  List<XFile> _selectedImageFiles = [];
   List<String> _existingImageUrls = [];
   bool _uploadingImages = false;
 
@@ -204,8 +204,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
         });
 
         try {
-          final imagePaths = _selectedImageFiles.map((file) => file.path).toList();
-          await _apiService.uploadProductImages(productId, imagePaths);
+          await _apiService.uploadProductImages(productId, _selectedImageFiles);
         } catch (e) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/api_constants.dart';
 
@@ -178,17 +179,23 @@ class ApiService {
   /// Subir imágenes a un producto
   Future<Map<String, dynamic>> uploadProductImages(
     String productId,
-    List<String> imagePaths,
+    List<XFile> imageFiles,
   ) async {
     final formData = FormData();
 
-    // Agregar cada imagen al FormData
-    for (final path in imagePaths) {
-      final fileName = path.split('/').last;
+    // Agregar cada imagen al FormData usando bytes (compatible con web)
+    for (final xFile in imageFiles) {
+      final bytes = await xFile.readAsBytes();
+      // Obtener nombre del archivo (compatible con web y móvil)
+      final fileName = xFile.name.split('/').last.split('\\').last;
+      
       formData.files.add(
         MapEntry(
           'images',
-          await MultipartFile.fromFile(path, filename: fileName),
+          MultipartFile.fromBytes(
+            bytes,
+            filename: fileName,
+          ),
         ),
       );
     }
