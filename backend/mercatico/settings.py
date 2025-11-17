@@ -76,13 +76,23 @@ WSGI_APPLICATION = 'mercatico.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
+# Configure database with connection retry settings
+DATABASE_URL = config('DATABASE_URL', default='postgresql://postgres:postgres@localhost:5432/mercatico')
 DATABASES = {
     'default': dj_database_url.config(
-        default=config('DATABASE_URL', default='postgresql://postgres:postgres@localhost:5432/mercatico'),
+        default=DATABASE_URL,
         conn_max_age=600,
         conn_health_checks=True,
     )
 }
+
+# Add connection options for better reliability
+if DATABASES['default'].get('OPTIONS') is None:
+    DATABASES['default']['OPTIONS'] = {}
+DATABASES['default']['OPTIONS'].update({
+    'connect_timeout': 10,
+    'options': '-c statement_timeout=30000'
+})
 
 # Custom User Model
 AUTH_USER_MODEL = 'users.User'

@@ -1,1 +1,1 @@
-web: python manage.py migrate --noinput && python manage.py create_initial_categories && gunicorn mercatico.wsgi --bind 0.0.0.0:$PORT
+web: python manage.py wait_for_db --max-retries=30 --retry-delay=2 && python manage.py migrate --noinput && python manage.py create_initial_categories && gunicorn mercatico.wsgi --bind 0.0.0.0:$PORT

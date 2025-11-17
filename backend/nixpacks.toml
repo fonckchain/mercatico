@@ -8,4 +8,4 @@ cmds = ["pip install -r requirements.txt"]
 cmds = ["python manage.py collectstatic --noinput"]
 
 [start]
-cmd = "python manage.py migrate --noinput && python manage.py create_initial_categories && python manage.py create_test_users && gunicorn mercatico.wsgi --bind 0.0.0.0:$PORT"
+cmd = "python manage.py wait_for_db --max-retries=30 --retry-delay=2 && python manage.py migrate --noinput && python manage.py create_initial_categories && python manage.py create_test_users && gunicorn mercatico.wsgi --bind 0.0.0.0:$PORT"
